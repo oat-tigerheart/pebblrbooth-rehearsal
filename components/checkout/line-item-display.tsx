@@ -1,0 +1,98 @@
+"use client";
+
+import Image from "next/image";
+import { getFloatVal, formatPrice, decodeHtmlEntities } from "@/lib/utils";
+import {
+  GiftCardDetails,
+  type GiftCardDisplay,
+} from "@/components/checkout/gift-card-details";
+import {
+  AddonDetails,
+  type AddonDisplay,
+} from "@/components/checkout/addon-details";
+
+export type { GiftCardDisplay, AddonDisplay };
+
+export interface LineItemDisplayProps {
+  name: string;
+  images: Array<{ src?: string | null; alt?: string | null }>;
+  variation?: Array<{ attribute: string; value: string }>;
+  quantity: number;
+  lineSubtotal: string;
+  currency: string;
+  giftCard?: GiftCardDisplay | null;
+  /**
+   * The shopper's Product Add-Ons selections for this line. Typed as a plain
+   * list rather than a nullable one because the schema guarantees
+   * `[CartItemAddonSelection!]!` with an empty default (D-14.1-04) — a line
+   * that has no add-ons carries `[]`, never null. The default below exists for
+   * the one caller that has no line item at all to read from.
+   */
+  addons?: readonly AddonDisplay[];
+  /** When true, omit the line price (HeadKit Quote mode). */
+  hidePrice?: boolean;
+}
+
+export function LineItemDisplay({
+  name,
+  images,
+  variation = [],
+  quantity,
+  lineSubtotal,
+  currency,
+  giftCard = null,
+  addons = [],
+  hidePrice = false,
+}: LineItemDisplayProps) {
+  const displayName = decodeHtmlEntities(name);
+  const imageSrc = images[0]?.src ?? "/assets/HeadKit-Fallback.png";
+  const imageAlt = decodeHtmlEntities(images[0]?.alt ?? name);
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex gap-3">
+        <div className="relative h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[3px] bg-white">
+          <Image
+            src={imageSrc}
+            fill
+            className="absolute left-0 top-0 h-full w-full object-contain"
+            alt={imageAlt}
+            quality={50}
+            sizes="60px"
+          />
+        </div>
+
+        <div className="flex flex-1 flex-col justify-between">
+          <p className="font-medium text-sm capitalize text-gray-900 truncate">
+            {displayName}
+          </p>
+          {variation.length > 0 && (
+            <div className="flex flex-wrap text-xs text-gray-500">
+              {variation.map((v, i) => (
+                <span key={v.attribute}>
+                  {i > 0 && <span className="px-1">/</span>}
+                  {decodeHtmlEntities(v.value)}
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-gray-400">Qty {quantity}</p>
+        </div>
+
+        {!hidePrice && (
+          <div className="shrink-0 text-sm font-medium text-gray-900">
+            {formatPrice(getFloatVal(lineSubtotal), currency)}
+          </div>
+        )}
+      </div>
+
+      {giftCard && <GiftCardDetails giftCard={giftCard} />}
+      {/* Gift card first, add-ons second: a line can legitimately carry both,
+          and this keeps the existing element order untouched for every line
+          that carries only a gift card. The guard is a length test, not a null
+          guard — `addons` is a non-null list with an empty default
+          (D-14.1-04). */}
+      {addons.length > 0 && <AddonDetails addons={addons} />}
+    </div>
+  );
+}

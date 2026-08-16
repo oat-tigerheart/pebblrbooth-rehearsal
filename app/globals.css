@@ -1,0 +1,255 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@plugin "tailwindcss-animate";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --color-background: #ffffff;
+  --color-text: #171717;
+  --radius: 0.5rem;
+  --radius-button: 0.375rem;
+  --font-heading: var(--font-slot-urbanist, var(--font-urbanist));
+  --font-subheading: var(--font-slot-urbanist, var(--font-urbanist));
+  --font-body: var(--font-slot-urbanist, var(--font-urbanist));
+}
+
+/*
+ * Brand tokens use plain `@theme` (not `inline`) so utilities reference
+ * `var(--color-*)` and layout.tsx's runtime `:root` overrides take effect.
+ * `@theme inline` would bake the default hex into hover/opacity classes
+ * (e.g. hover:bg-primary/70, hover:stroke-purple-500), leaving #7f54b3
+ * visible after branding is applied.
+ *
+ * purple-500 is the accent used for icon/link/swatch hovers and badges —
+ * it tracks --color-primary so tenant branding covers those surfaces too.
+ * purple-800 tracks primary for headings/links when branded; purple-900
+ * tracks body text colour.
+ */
+@theme {
+  --color-primary: #7f54b3;
+  --color-secondary: #000000;
+  --color-primary-text: #ffffff;
+  /* Editorial ink — the colour of headings, prose headings and bare anchors.
+     These used to be painted with --color-primary unconditionally, which is a
+     brand accent chosen for FILLED surfaces, not for text on the page
+     background; a light primary made every heading and link on the site
+     unreadable. Defaults to the body text colour, so a store that has not
+     rebranded is unchanged. Point this at --color-primary in
+     overrides/styles.css to restore the old look per store. */
+  --color-editorial-ink: var(--color-text, var(--foreground));
+  /* Page/surface background — theme colour so md:text-brand-bg /
+     bg-brand-bg/85 generate with responsive + opacity variants.
+     References runtime --background (layout.tsx), not --color-background,
+     so the token resolves even before @theme inline aliases apply. */
+  --color-brand-bg: var(--background);
+  --color-purple-500: var(--color-primary);
+  /* Headings/links that still use purple-800 track branding primary */
+  --color-purple-800: var(--color-primary);
+  /* Remaining purple scale tracks primary so no default Woo purple leaks through */
+  --color-purple-50: color-mix(in srgb, var(--color-primary) 8%, white);
+  --color-purple-100: color-mix(in srgb, var(--color-primary) 14%, white);
+  --color-purple-200: color-mix(in srgb, var(--color-primary) 25%, white);
+  --color-purple-300: color-mix(in srgb, var(--color-primary) 40%, white);
+  --color-purple-400: color-mix(in srgb, var(--color-primary) 65%, white);
+  --color-purple-700: color-mix(in srgb, var(--color-primary) 85%, black);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-body);
+  /* Align Tailwind text-base with body (16px) */
+  --text-base: 16px;
+  --text-base--line-height: normal;
+
+  /* Purple neutrals – remapped via @theme / layout when branding sets primary */
+  --color-purple-900: #0b050f;
+
+  /* Pink – sale, CTA hover, destructive */
+  --color-pink-500: #ed4395;
+  /* Darker brand pink for TEXT/white-on-bg use: pink-500 is only 3.6:1
+     against white (fails WCAG AA 4.5:1); pink-600 is 4.9:1. */
+  --color-pink-600: #d6187b;
+  --color-pink-800: #a81059;
+
+  /* Lime – accent sections */
+  --color-lime-400: #dbfe87;
+  --color-lime-800: #80b602;
+  /* Text-safe lime: lime-800 is 2.4:1 on white (fails AA); lime-900 is
+     5.4:1 for text like the in-stock availability label. */
+  --color-lime-900: #527502;
+
+  /* Gray – borders, muted text, surfaces */
+  --color-gray-50: #fafaf9;
+  --color-gray-100: #f5f5f4;
+  --color-gray-200: #ececea;
+  --color-gray-500: #c5c5bf;
+  --color-gray-600: #a8a89f;
+  --color-gray-700: #76766b;
+  --color-gray-800: #56564e;
+  --color-gray-900: #171717;
+
+  /* All radius utilities track branding --radius (set in layout.tsx).
+     Without 2xl/3xl aliases, hero/cards using rounded-2xl kept Tailwind’s
+     fixed 1rem and ignored soft/round/square cornerStyle. */
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) * 1.25);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 2.5);
+  --radius-4xl: calc(var(--radius) * 3);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+
+  body {
+    background-color: var(--color-background, var(--background));
+    color: var(--color-text, var(--foreground));
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px;
+    /* WordPress "Auto" line height — font default, not a fixed ratio */
+    line-height: normal;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 600;
+    /* WordPress "Auto" line height — override utility leadings on headings */
+    line-height: normal !important;
+  }
+
+  h1 {
+    font-size: 36px;
+  }
+
+  h2 {
+    font-size: 32px;
+  }
+
+  h3 {
+    font-size: 22px;
+  }
+
+  h4 {
+    font-size: 20px;
+  }
+
+  h5 {
+    font-size: 18px;
+  }
+
+  h6 {
+    font-size: 16px;
+  }
+
+  /*
+   * Font family stays branded; COLOUR does not. --color-editorial-ink beats a
+   * per-store branding edit because the value it replaced (--color-primary) is
+   * the same token the merchant sets for filled controls — there is no branding
+   * entry that can be both a legible heading colour and a strong accent, so the
+   * split has to live here.
+   */
+  h1,
+  h2 {
+    font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+    color: var(--color-editorial-ink);
+  }
+
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-subheading), ui-sans-serif, system-ui, sans-serif;
+    color: var(--color-editorial-ink);
+  }
+
+  /* Explicit utility so components can opt in without fighting prose resets.
+     Retained deliberately: components that WANT the primary keep it, and this
+     class beats the h1–h6 rules above because it is later in the same layer
+     with equal specificity. */
+  .heading-primary {
+    color: var(--color-primary);
+  }
+
+  /*
+   * Tailwind Typography paints headings via --tw-prose-headings (gray by
+   * default), which beats the base h1–h6 rules above. Point it at editorial
+   * ink so editorial/About/FAQ prose matches storefront headings.
+   * Also force WordPress "Auto" line-height (normal) over prose's fixed
+   * leading on body copy and headings; editor inline line-height still wins.
+   */
+  .prose {
+    --tw-prose-headings: var(--color-editorial-ink);
+    line-height: normal;
+  }
+
+  .prose
+    :is(
+      p,
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      li,
+      blockquote,
+      figcaption,
+      td,
+      th,
+      cite,
+      summary,
+      dt,
+      dd
+    ) {
+    line-height: normal;
+  }
+
+  /* Bare anchors inherit editorial ink, not the accent. Any anchor that should
+     read as an accent link opts in with `text-primary`, which is a utility and
+     therefore beats this base rule. */
+  a {
+    color: var(--color-editorial-ink);
+  }
+}
+
+@layer utilities {
+  .bg-primary {
+    background-color: var(--color-primary);
+    color: var(--color-primary-text);
+  }
+  .text-primary {
+    color: var(--color-primary);
+  }
+  .text-on-primary {
+    color: var(--color-primary-text);
+  }
+  /* brand-bg text/bg utilities come from @theme --color-brand-bg only —
+     manual @layer utilities do not get md: / opacity variants, which broke
+     hero overlay titles (md:text-brand-bg never applied on desktop). */
+  .border-primary {
+    border-color: var(--color-primary);
+  }
+  .rounded-brand {
+    border-radius: var(--radius);
+  }
+  .rounded-brand-button {
+    border-radius: var(--radius-button);
+  }
+  .font-body {
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  }
+}

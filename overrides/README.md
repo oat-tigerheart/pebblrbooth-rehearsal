@@ -1,0 +1,184 @@
+# Storefront overrides
+
+Customer-owned customisation layer. **Prefer this directory for UI and styling edits.**
+
+Platform template upgrades should leave `overrides/` alone. You still have the full storefront repo if you need deeper changes — use that as an escape hatch, not the default.
+
+## What goes here
+
+| Path                 | Purpose                                                                |
+| -------------------- | ---------------------------------------------------------------------- |
+| `styles.css`         | CSS beyond dashboard branding (layout, spacing, hide elements, tweaks) |
+| `header-actions.tsx` | Extra header icons (e.g. phone) between Account and Cart               |
+
+## What stays elsewhere
+
+| Concern                                   | Prefer                                                                                                         |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Brand colours, fonts, corner style, icons | Dashboard → Branding (runtime CSS vars)                                                                        |
+| Copy / product data / checkout fields     | Store config & commerce APIs (coming later)                                                                    |
+| One-off pages or unique React behaviour   | New routes under `app/` or local components — avoid editing `components/headkit-ui/` when a hook + CSS will do |
+
+## Styling
+
+Edit `styles.css`. It is imported from the root layout after `app/globals.css`.
+
+Dashboard branding still sets primary colour, fonts, and radii at runtime. Use overrides for everything those tokens do not cover (and for intentional CSS visibility rules such as hiding prices).
+
+```css
+/* Example: hide prices site-wide */
+.price,
+[data-price] {
+  display: none;
+}
+```
+
+## Header action extras
+
+`header-actions.tsx` is mounted by the core header between Account and Cart (desktop) and after Account (mobile sheet). Put store-specific actions here (phone, etc.) so template upgrades do not overwrite them.
+
+Return `null` from `HeaderActionExtras` / `MobileHeaderActionExtras` to hide them (default in the starter template).
+
+## CSS hook classes (stable selectors)
+
+The starter ships **hook classes** on key layout regions so you can target them from `overrides/styles.css` without editing React components. All hooks use the `headkit-*` prefix and match WordPress block pattern names where applicable.
+
+### Shell & chrome
+
+| Hook class                       | Where                         | Use for                                      |
+| -------------------------------- | ----------------------------- | -------------------------------------------- |
+| `headkit-main`                   | `<main>` in root layout       | Site-wide content padding / footer gap       |
+| `headkit-preheader`              | Promo / announcement bar      | Background, text, link colour                |
+| `headkit-nav`                    | Main navigation bar           | Nav link typography, uppercase, hover states |
+| `headkit-nav-secondary`          | Right-side nav list (actions) | Icon row spacing, secondary link styles      |
+| `headkit-footer`                 | Site footer                   | Footer background, borders, typography       |
+| `headkit-footer-connect`         | Footer social / Connect block | Hide socials or restyle icons                |
+| `headkit-footer-subscribe`       | Footer mailing-list form      | Subscribe label / input / button             |
+| `headkit-footer-payment-methods` | Footer payment icon row       | Hide or resize payment badges                |
+| `headkit-cart-drawer`            | Cart / quote drawer sheet     | Drawer background, item list, CTA            |
+| `headkit-search-drawer`          | Search overlay sheet          | Search input / result grid                   |
+
+### Homepage & CMS sections
+
+| Hook class                   | Where                                  | Use for                                            |
+| ---------------------------- | -------------------------------------- | -------------------------------------------------- |
+| `headkit-home`               | Homepage root wrapper                  | Homepage-only rules (section backgrounds, spacing) |
+| `headkit-cms-page`           | CMS page content padding wrappers      | Inner-page typography / max-width                  |
+| `headkit-cms-html`           | Homepage leftover WP HTML segments     | Editorial copy between HeadKit sections            |
+| `headkit-hero-carousel`      | Hero / main carousel                   | Slide overlay, CTA, pagination dots                |
+| `headkit-callout`            | Callout / promo box                    | Background, text colour, button row                |
+| `headkit-callout-section`    | Outer padding around a callout         | Section vertical rhythm                            |
+| `headkit-brand-carousel`     | Brand carousel sections                | Logo sizing, section padding, dots                 |
+| `headkit-client-carousel`    | Client carousel sections               | Same for client logo rails                         |
+| `headkit-category-carousel`  | Category carousel sections             | Category rail styling                              |
+| `headkit-product-carousel`   | Product carousel sections (CMS + home) | Product rail styling                               |
+| `headkit-post-carousel`      | News / blog carousel sections          | Post card styling                                  |
+| `headkit-project-carousel`   | Projects carousel sections             | Project card styling                               |
+| `headkit-section-header`     | Section title + description + View all | Heading colour, CTA underline                      |
+| `headkit-gallery`            | WP gallery media blocks                | Gallery layout / gaps                              |
+| `headkit-embed`              | WP embed / iframe blocks               | Embed sizing                                       |
+| `headkit-video-feature-wrap` | Video feature sections                 | Two-column video + copy layout                     |
+| `headkit-media`              | Other sanitized media HTML blocks      | Generic media section styling                      |
+
+### Catalog & commerce
+
+| Hook class                | Where                          | Use for                            |
+| ------------------------- | ------------------------------ | ---------------------------------- |
+| `headkit-collection`      | PLP / collection grid shell    | Filters, grid, load-more           |
+| `headkit-product-card`    | Individual product card        | Card image, title, price, swatches |
+| `headkit-product-detail`  | PDP (product detail)           | Gallery + buy box layout           |
+| `headkit-badge-new`       | “New” product badge            | Colour, hide, typography           |
+| `headkit-badge-sale`      | “Sale” product badge           | Colour, hide, typography           |
+| `headkit-badge-cart`      | Cart quantity badge on icon    | Badge colour / size                |
+| `headkit-recently-viewed` | Recently viewed products strip | Section spacing / heading          |
+
+### Key routes
+
+| Hook class              | Where                | Use for                      |
+| ----------------------- | -------------------- | ---------------------------- |
+| `headkit-contact`       | `/contact` page root | Contact layout / form column |
+| `headkit-checkout`      | Checkout page root   | Checkout form / summary      |
+| `headkit-quote`         | Quote checkout root  | Quote form styling           |
+| `headkit-news-page`     | `/news` listing      | Category chips, post grid    |
+| `headkit-projects-page` | `/projects` listing  | Category chips, project grid |
+
+WordPress also emits related markers in content HTML (not React wrappers):
+
+| Marker / class              | Where                          | Notes                                    |
+| --------------------------- | ------------------------------ | ---------------------------------------- |
+| `headkit-gravity-form`      | GF placeholder in CMS HTML     | Replaced by React Gravity Form           |
+| `headkit-product-lists`     | WP product grid in CMS HTML    | Hydrated into `headkit-product-carousel` |
+| `headkit-block-section`     | WP HeadKit section groups      | Parsed into BlockEditor sections         |
+| `headkit-block-title`       | Section title in WP HTML       | Extracted for SectionHeader              |
+| `headkit-block-description` | Section description in WP HTML | Extracted for SectionHeader              |
+| `headkit-hilight`           | Legacy callout alias           | Treated like `headkit-callout`           |
+
+### Examples
+
+```css
+/*
+ * Radix NavigationMenuList wraps each <ul> in a relative <div>, so the
+ * structure is nav.headkit-nav > div > ul > li > a|button — not nav > ul.
+ */
+.headkit-nav > div > ul > li > a,
+.headkit-nav > div > ul > li > button {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Homepage: alternate section backgrounds */
+.headkit-home .headkit-client-carousel {
+  background-color: var(--brand-bg, #e5e5e0);
+}
+
+.headkit-home .headkit-project-carousel {
+  background-color: #2d4236;
+  color: #f2f2ef;
+}
+
+/* Callout: brand-coloured promo band */
+.headkit-callout {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+/* Hide New badge; recolour cart count */
+.headkit-badge-new {
+  display: none;
+}
+.headkit-badge-cart {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+/* Footer */
+.headkit-footer {
+  background-color: var(--brand-bg, #fff);
+}
+.headkit-footer-payment-methods,
+.headkit-footer-connect {
+  display: none;
+}
+
+/* PDP / PLP tweaks */
+.headkit-product-detail .headkit-badge-sale {
+  background-color: #c41e3a;
+}
+.headkit-collection .headkit-product-card {
+  /* card-level overrides */
+}
+```
+
+### CMS blocks vs hardcoded sections
+
+WordPress editor blocks and hardcoded starter fallbacks (when WP does not provide a pattern) both expose the same hook classes — e.g. `headkit-brand-carousel` and `headkit-product-carousel` work whether the section comes from a WP pattern or the starter fallback on `app/page.tsx`. Hero slides use `headkit-hero-carousel` in both paths.
+
+## Full-repo escape hatch
+
+Store owners and agents can still change any file in this repo. That works, but merges against future HeadKit starter updates become manual. Prefer `overrides/` (and dashboard branding) so core storefront code stays upgradeable.
+
+**Do not edit `components/headkit-ui/` for cosmetic CSS** when a hook class above covers the target. If a region lacks a hook, open a platform PR to add one rather than patching the component in a customer repo.
+
+## Future
+
+Named React slots, copy overrides, and feature flags may land here later.
