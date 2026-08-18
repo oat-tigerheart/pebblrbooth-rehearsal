@@ -123,3 +123,41 @@
   background-image: none;
   background-color: rgb(0 0 0 / 0.5);
 }
+
+/* --------------------------------------------------------------------------
+   Section-header "View all" CTA renders as V1's outline button.
+
+   V1's SectionHeader wraps the link in `<Button variant="outline">` — a 50px
+   pill with a 2px black border. The platform SectionHeader renders a plain
+   underlined link instead. Restyling the existing anchor keeps that difference
+   in CSS rather than forking the component, and covers every section that uses
+   the header (packages, events) in one rule.
+
+   The child combinator matters. The CTA anchor sits at
+   `.headkit-section-header > div > a`; the title/description column is also a
+   direct child div, but its links live one level deeper inside the sanitized
+   WP description HTML. A bare descendant selector would blow those inline
+   links up into 50px buttons too.
+   -------------------------------------------------------------------------- */
+.headkit-section-header > div > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  padding: 0.5rem 1rem;
+  border: 2px solid #000;
+  border-radius: var(--radius-button);
+  background-color: #fff;
+  color: #000;
+  font-size: 20px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.headkit-section-header > div > a:hover {
+  box-shadow: var(--pb-button-shadow);
+}

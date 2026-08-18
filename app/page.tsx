@@ -1,13 +1,10 @@
+import { Fragment } from "react";
 import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 import { TAG } from "@/lib/cache-tags";
 import { headkit } from "@/lib/sdk";
-import type { Product, HeroCarouselItem, FeaturedCategory } from "@headkit/sdk";
-import {
-  processHomepageContent,
-  getBlockQueryType,
-  hasEditorSectionClass,
-} from "@/lib/process-editor-blocks";
+import type { Product, FeaturedBrand } from "@headkit/sdk";
+import { processHomepageContent } from "@/lib/process-editor-blocks";
 import {
   makeRootMetadata,
   resolveHomeTitle,
@@ -15,15 +12,14 @@ import {
   resolveStoreName,
 } from "@/lib/make-metadata";
 import { getBranding, getBrandingAssets } from "@/lib/branding";
-import {
-  filterCategoriesByNonEmptySlugs,
-  getNonEmptyCollectionSlugs,
-} from "@/lib/hide-empty-collections";
-import { MainCarousel } from "@/components/headkit-ui/main-carousel";
+import { Hero } from "@/components/pebblr/hero";
+import { StepsSection } from "@/components/pebblr/steps-section";
+import { EventsCarousel } from "@/components/pebblr/events-carousel";
+import { BrandWall } from "@/components/pebblr/brand-wall";
+import { CtaBanner } from "@/components/pebblr/cta-banner";
+import { getEventPages, EVENT_PAGE_TAGS } from "@/lib/pebblr-events";
 import { BlockEditor } from "@/components/headkit-ui/block-editor";
 import { EditorialContent } from "@/components/headkit-ui/editorial-content";
-import { ProductCarousel } from "@/components/headkit-ui/product-carousel";
-import { CategoryCarousel } from "@/components/headkit-ui/category-carousel";
 import { SectionHeader } from "@/components/headkit-ui/section-header";
 import { CarouselProductJsonLD } from "@/components/seo/carousel-product-json-ld";
 
@@ -86,6 +82,11 @@ const HOME_TAGS: readonly string[] = [
   TAG.route("home"),
   TAG.branding,
   TAG.collections,
+  // The event rail reads four WordPress PAGES that are not part of
+  // `homepage.get()`. Without their entity tags here, editing the Weddings
+  // page would refresh /wedding-photo-booth-adelaide and leave the homepage
+  // tile showing the old title and artwork until the `days` life expired.
+  ...EVENT_PAGE_TAGS,
 ];
 
 export async function getHomepageData() {
@@ -115,22 +116,16 @@ export async function HomeContent() {
   cacheLife("days");
   cacheTag(...HOME_TAGS);
 
-  const { homepage, onSaleProducts } = await getHomepageData();
-  const { branding } = await getBranding();
-  const nonEmptySlugs = branding.hideEmptyCollections
-    ? await getNonEmptyCollectionSlugs()
-    : null;
+  const [{ homepage }, eventPages] = await Promise.all([
+    getHomepageData(),
+    getEventPages(),
+  ]);
 
-  const carousels = (homepage?.carousels ??
-    []) as unknown as HeroCarouselItem[];
-  const featuredCategoriesRaw = (homepage?.featuredCategories ??
-    []) as unknown as FeaturedCategory[];
-  const featuredCategories = nonEmptySlugs
-    ? filterCategoriesByNonEmptySlugs(featuredCategoriesRaw, nonEmptySlugs)
-    : featuredCategoriesRaw;
+  const featuredBrands = (homepage?.featuredBrands ??
+    []) as unknown as FeaturedBrand[];
   const featuredProducts = (homepage?.featuredProducts ??
     []) as unknown as Product[];
-  const { blocks: editorBlocks, segments } = processHomepageContent(
+  const { segments } = processHomepageContent(
     homepage?.page?.content ?? "",
     (homepage?.page?.editorBlocks ?? []) as Array<{
       products?: unknown[];
@@ -139,105 +134,73 @@ export async function HomeContent() {
     }>,
   );
 
-  // Prefer WP queryType carousels over hardcoded On Sale when the front page
-  // already includes that HeadKit pattern (avoids duplicates).
-  const wpQueryTypes = new Set(
-    editorBlocks
-      .map((b) => getBlockQueryType(b))
-      .filter((qt): qt is string => qt !== null),
-  );
-  const showHardcodedSale =
-    !wpQueryTypes.has("on-sale") &&
-    onSaleProducts !== null &&
-    onSaleProducts.products.length > 0;
-
-  // Skip hardcoded Shop by Category when WP already provides the pattern.
-  // Brands are CMS-only (headkit-brand-carousel) — never append a fallback
-  // "Our Brands" strip after editor content (duplicates Clients / wrong order).
-  const showHardcodedCategories =
-    !hasEditorSectionClass(editorBlocks, "headkit-category-carousel") &&
-    featuredCategories.length > 0;
-  // Prefer WP hero pattern placement over the hardcoded top carousel.
-  const showHardcodedHero =
-    !hasEditorSectionClass(editorBlocks, "headkit-hero-carousel") &&
-    carousels.length > 0;
-
   return (
     <>
       {featuredProducts.length > 0 && (
         <CarouselProductJsonLD products={featuredProducts} />
       )}
 
-      {showHardcodedHero && <MainCarousel carouselItems={carousels} />}
+      <Hero
+        title="Adelaide's best Photobooth hire"
+        button={{ text: "Choose a Package", url: "/book-now" }}
+        image={{
+          src: "/pebblr-hero.jpg",
+          alt: "Guests posing together in a Pebblr Booth at an Adelaide event",
+        }}
+      />
 
-      {/* WP front-page content in editor document order */}
+      {/*
+        WP front-page content in editor document order, with StepsSection
+        slotted in after the first HeadKit section.
+
+        V1 renders `<BlockEditor section="section-1" />`, then StepsSection,
+        then `<BlockEditor section="section-2" />`. The equivalent here is to
+        walk the ordered segments and emit StepsSection immediately after the
+        `section-1` block, rather than appending the hardcoded sections after
+        all WP content. Today that is the "HeadKit Hilight" group (which
+        carries no explicit `section-*` class, so the parser defaults it to
+        `section-1`) followed by "HeadKit Product Carousel" (`section-2`).
+        A third WP section would land after Steps, which is where the editor
+        put it.
+      */}
       {segments.map((seg, index) => {
-        if (seg.kind === "html") {
-          return (
-            <section
-              key={`wp-html-${index}`}
-              className="headkit-cms-html hk-section-content px-5 md:px-10 py-10"
-            >
+        const body =
+          seg.kind === "html" ? (
+            <section className="headkit-cms-html hk-section-content px-5 md:px-10 py-10">
               <EditorialContent html={seg.html} />
             </section>
+          ) : (
+            <BlockEditor blocks={[seg.block]} />
           );
-        }
-        return <BlockEditor key={`wp-block-${index}`} blocks={[seg.block]} />;
+
+        return (
+          <Fragment key={`wp-seg-${index}`}>
+            {body}
+            {seg.kind === "block" && seg.block.section === "section-1" ? (
+              <StepsSection />
+            ) : null}
+          </Fragment>
+        );
       })}
 
-      {/* Platform commerce modules (not WP page blocks) */}
-      {featuredProducts.length > 0 && (
-        <section className="headkit-product-carousel overflow-x-clip py-10">
+      {eventPages.length > 0 && (
+        <section className="headkit-category-carousel overflow-hidden py-[30px]">
           <SectionHeader
-            title="Featured Products"
-            description=""
-            allButton="View All"
-            allButtonPath="/featured"
+            title="Booths and video for all events"
+            description="We make the best time for Weddings, Corporate and Birthdays."
+            allButton="All events"
+            allButtonPath="/events"
             className="px-5 md:px-10"
           />
-          <div className="mt-8">
-            <ProductCarousel
-              products={featuredProducts}
-              id="featured-products"
-            />
+          <div className="mt-5">
+            <EventsCarousel pages={eventPages} />
           </div>
         </section>
       )}
 
-      {/* On Sale — skipped when WP already provides a product-on-sale carousel */}
-      {showHardcodedSale && (
-        <section className="headkit-product-carousel overflow-x-clip py-10 bg-gray-50">
-          <SectionHeader
-            title="On Sale"
-            description=""
-            allButton="View All"
-            allButtonPath="/sale"
-            className="px-5 md:px-10"
-          />
-          <div className="mt-8">
-            <ProductCarousel
-              products={onSaleProducts.products.slice(0, 12) as Product[]}
-              id="on-sale-products"
-            />
-          </div>
-        </section>
-      )}
+      <BrandWall brands={featuredBrands} />
 
-      {/* Shop by Category — skipped when WP provides headkit-category-carousel */}
-      {showHardcodedCategories && (
-        <section className="headkit-category-carousel overflow-hidden py-10">
-          <SectionHeader
-            title="Shop by Category"
-            description=""
-            allButton="View All"
-            allButtonPath="/collections"
-            className="px-5 md:px-10"
-          />
-          <div className="mt-8">
-            <CategoryCarousel categories={featuredCategories} />
-          </div>
-        </section>
-      )}
+      <CtaBanner />
     </>
   );
 }
