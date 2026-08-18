@@ -55,3 +55,71 @@
  */
 
 /* Add store-specific CSS below this line. */
+
+/* ==========================================================================
+   Pebblr Booth brand tokens
+   Ported from the live V1 storefront's `@theme` block
+   (tigerheart-studios-pebblr-booth-68e72bb0 · src/app/globals.css).
+
+   Dashboard -> Branding already owns the pieces it can express: Syne for
+   heading/subheading/body, #000000 primary/secondary/text, #ffffff background,
+   corner style "soft" (--radius: 0.5rem / --radius-button: 0.375rem ~= V1's
+   rounded-[6px]). Everything below is what branding cannot express: the
+   secondary palette and the purple->blue CTA gradient that is Pebblr's
+   signature.
+
+   `:root:root` is deliberate. layout.tsx injects the runtime branding vars in
+   an inline <style> in <head>, and document order between that tag and the
+   bundled stylesheet is not guaranteed. Doubling the pseudo-class raises
+   specificity so these values land regardless of order, without !important
+   (Tailwind v4 inverts layer order for !important — see AGENTS notes).
+   ========================================================================== */
+:root:root {
+  --pb-purple: #934491;
+  --pb-blue: #29abe2;
+  --pb-green: #47d496;
+  --pb-red: #fb6376;
+  --pb-yellow: #dea54b;
+  --pb-gray: #76766b;
+
+  /* V1's primary CTA fill: `bg-linear-to-r from-pb-purple to-pb-blue`. */
+  --pb-gradient: linear-gradient(
+    to right,
+    var(--pb-purple),
+    var(--pb-blue)
+  );
+  /* V1 `--drop-shadow-pb-text` — hero headline lift over video. */
+  --pb-text-shadow: 6px 6px 10px rgb(0 0 0 / 0.2);
+  /* V1 `--shadow-button` — the hover lift on every button variant. */
+  --pb-button-shadow: -3px 6px 8px 0px #23102e33;
+}
+
+/* --------------------------------------------------------------------------
+   Primary CTA buttons carry the brand gradient.
+
+   Scoped to the button radius class rather than bare `.bg-primary`: the same
+   utility paints the black preheader bar, the cart-count badge and the filter
+   chips, all of which are solid black on V1 too. `rounded-[var(--radius-button)]`
+   is emitted only by `components/ui/button.tsx` (and the PDP wishlist toggle),
+   so it isolates real buttons without touching those surfaces.
+
+   Unlayered, so it outranks the `@layer utilities .bg-primary` rule in
+   app/globals.css without needing !important.
+   -------------------------------------------------------------------------- */
+.bg-primary.rounded-\[var\(--radius-button\)\] {
+  background-image: var(--pb-gradient);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* `hover:bg-primary/70` only repaints background-COLOR, which the gradient
+   already covers. Match V1, which swaps the hover for a shadow lift. */
+.bg-primary.rounded-\[var\(--radius-button\)\]:hover {
+  box-shadow: var(--pb-button-shadow);
+}
+
+/* V1 disables the CTA to a flat 50% black rather than a faded gradient. */
+.bg-primary.rounded-\[var\(--radius-button\)\]:disabled {
+  background-image: none;
+  background-color: rgb(0 0 0 / 0.5);
+}
