@@ -150,6 +150,12 @@ const CURATED: Record<string, CuratedFamily> = {
     fontsourceId: "dm-sans",
     availableWeights: [400, 500, 600, 700],
   },
+  Syne: {
+    cssVar: "--font-slot-syne",
+    familyName: "Syne",
+    fontsourceId: "syne",
+    availableWeights: [400, 500, 600, 700],
+  },
   "Space Grotesk": {
     cssVar: "--font-slot-space-grotesk",
     familyName: "Space Grotesk",
