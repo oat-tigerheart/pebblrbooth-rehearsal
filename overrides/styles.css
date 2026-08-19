@@ -237,3 +237,27 @@
   font-size: 24px;
   font-weight: 700;
 }
+
+/* ==========================================================================
+   Checkout / footer — align with V1 (handover section 6.3)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   No card-brand icons in the footer.
+
+   The platform ships Visa / Mastercard / Amex / Apple Pay / Google Pay and the
+   layout only suppresses them for `checkoutMode === "quote"`. This store is in
+   "custom" mode, so all five render — measured: 5 in V2's footer, 0 in V1's.
+
+   For Pebblr they are not merely surplus, they are wrong: every booking is a
+   bank transfer confirmed after the event is agreed, so the row advertises five
+   payment methods the merchant does not accept. Hidden here rather than by
+   flipping checkout mode, which would change behaviour (and re-hide prices).
+
+   Note the sibling attribution ("Built with HeadKit", bottom-right) is NOT
+   touched — V1 renders it too, so removing it would introduce a difference
+   rather than remove one.
+   -------------------------------------------------------------------------- */
+.headkit-footer-payment-methods {
+  display: none;
+}
