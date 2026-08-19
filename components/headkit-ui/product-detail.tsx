@@ -632,7 +632,11 @@ export function ProductDetail({
   }> = [
     {
       key: "description",
-      label: "Description",
+      // PEBBLR: V1 labels this accordion "Details" (measured: a visible
+      // <button>, 24px/700). The handover recorded it as having no visible
+      // heading, which is what querying only h1-h4 shows — the trigger is a
+      // button, so it never appeared in that query.
+      label: "Details",
       hasContent: !!product.description,
     },
     {
@@ -804,6 +808,17 @@ export function ProductDetail({
               Suspense boundary and no loading.tsx: the definitions arrive as
               props from the already-cached server page, and a boundary here
               risks re-introducing the recorded empty-static-shell defect. */}
+          {/* PEBBLR: V1 introduces the option fields with a heading, measured on
+              the live site as h3 `text-xl font-semibold` (20px/600) with a 20px
+              gap beneath. Guarded on the same condition as the add-on groups so
+              a product with no options never announces options it does not
+              have. */}
+          {addons.length > 0 && (
+            <h3 className="mb-5 text-xl font-semibold text-primary">
+              Choose your options to customise and book your package:
+            </h3>
+          )}
+
           {addons.length > 0 && (
             <ProductAddons
               addons={addons}
@@ -992,7 +1007,11 @@ export function ProductDetail({
           ) : null}
 
           {!isGiftCard && (
-            <div className="mb-6">
+            /* PEBBLR: hook class only — the store hides this from
+               overrides/styles.css (Pebblr takes bookings, not enquiries).
+               Kept as a class rather than deleting the block so a platform
+               upgrade still owns the component. */
+            <div className="headkit-product-enquiry mb-6">
               <ProductEnquiry
                 formId={ENQUIRY_FORM_ID}
                 productName={decodeHtmlEntities(product.name)}

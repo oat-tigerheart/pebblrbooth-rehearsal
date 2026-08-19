@@ -192,3 +192,48 @@
     line-height: 1.3 !important;
   }
 }
+
+/* ==========================================================================
+   Product detail page — align with V1 (handover section 6.2)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   No enquiry CTA. Pebblr takes bookings through the cart, never an enquiry
+   form, so "Enquire about this product" offers a route that does not exist for
+   this merchant. The platform component still renders; only the store hides it.
+   -------------------------------------------------------------------------- */
+.headkit-product-enquiry {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   No sticky add-to-cart bar.
+
+   This is the "double add-to-cart" from the gap analysis. The cause is not a
+   mobile bar leaking onto desktop: the platform renders the bar at EVERY
+   viewport (its own comment says "desktop + mobile"), and V1 has no sticky bar
+   at either 1440 or 390 — measured, one "Select Options" button and no
+   fixed-position element other than the header. So it is hidden outright
+   rather than behind a breakpoint, which is also what removes the second
+   add-to-cart on mobile.
+
+   Hiding it also drops the small product thumbnail it carries, which is one of
+   the extra images the gap analysis counted.
+   -------------------------------------------------------------------------- */
+.headkit-product-detail > .fixed.inset-x-0.bottom-0 {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   V1's accordion trigger is 24px/700; the platform's is 22px/600. Scoped to
+   the PDP so editorial accordions elsewhere keep the platform scale.
+
+   Matched via the Radix Accordion.Header wrapper, which renders an <h3>. The
+   obvious selector — `button[data-state][aria-expanded]` — is wrong here: every
+   add-on Select trigger on this page carries both attributes too, so it would
+   have rendered "Select Backdrop Design" and friends at 24px/700.
+   -------------------------------------------------------------------------- */
+.headkit-product-detail h3 > button {
+  font-size: 24px;
+  font-weight: 700;
+}
