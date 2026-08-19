@@ -333,24 +333,53 @@
 
    V1 puts the chevron inside `NavigationMenuTrigger` itself (lucide
    `chevron-down`, `h-3 w-3 ml-1 relative top-[1px]`, rotated 180 while open).
-   The platform's trigger renders no chevron, and even if it did the storefront
-   passes `asChild` so the trigger collapses into the `<a>` and any children
-   the trigger wrapped would be dropped. A pseudo-element is therefore the only
-   way to express this without forking `components/ui/navigation-menu.tsx`.
+   The platform's trigger renders no chevron, and today the storefront passes
+   `asChild` so the trigger collapses into the `<a>` and any children the
+   trigger wrapped would be dropped. A pseudo-element is therefore the only way
+   to express this without forking `components/ui/navigation-menu.tsx`.
 
-   Radix forwards `aria-expanded` (and `data-state`) onto the slotted anchor,
-   so `a[aria-expanded]` selects exactly the nav items that HAVE a submenu —
-   FAQ and the other childless items are plain `NavigationMenuLink`s and never
-   carry it. The tag matters: Search and Cart are `aria-expanded` BUTTONS in
-   the same nav, and a bare `[aria-expanded]` would have hung a chevron off
-   both icons.
+   The selector deliberately matches BOTH trigger shapes:
+
+     a[aria-expanded]        — today. `asChild` collapses the trigger into the
+                               `InstantLink`, and Radix forwards `aria-expanded`
+                               (and `data-state`) onto the slotted anchor.
+     button[aria-expanded]   — after platform PR #295, which drops `asChild` so
+                               the trigger renders as Radix's native `<button>`
+                               (it stops polluting the URL with `/#`). That PR
+                               is not in this clone yet; the rule is written now
+                               so no gap opens at the next template pull.
+     [data-slot=…] / [data-nav-trigger]
+                             — forward hooks. Inert until the platform ships an
+                               explicit trigger attribute; free insurance if the
+                               aria wiring is ever the thing that changes.
+
+   `:not([aria-label])` is what keeps the button arm honest. Search, Cart,
+   Wishlist, Account and the hamburger are all `aria-expanded` BUTTONS that sit
+   as direct `li >` children of this same nav — a bare `button[aria-expanded]`
+   would hang a chevron off every one of them. They are icon-only, so they all
+   carry an `aria-label`; a menu trigger labels itself with its own text and
+   never does. Childless items (FAQ) are plain `NavigationMenuLink`s and carry
+   no `aria-expanded` at all, so they stay chevron-free under either shape.
+
+   `:not(:has(svg))` makes the override self-disabling: current shadcn ships a
+   `ChevronDownIcon` inside `NavigationMenuTrigger`, so if a future template
+   pull brings that version along, the platform's own chevron wins instead of
+   doubling up. Today's trigger holds only text (the InstantLink pending state
+   is a `<span>` overlay, not an icon), so nothing is suppressed now.
 
    Drawn as a mask rather than a background image so `currentColor` still
-   drives it — the anchor is the element that carries the (highlighted / hover)
-   colour. No transition: V1's trigger only animates `colors`, so its chevron
-   flips instantly.
+   drives it — the trigger is the element that carries the (highlighted /
+   hover) colour. No transition: V1's trigger only animates `colors`, so its
+   chevron flips instantly.
    -------------------------------------------------------------------------- */
-.headkit-nav li > a[aria-expanded]::after {
+.headkit-nav
+  li
+  > :is(
+    a[aria-expanded],
+    button[aria-expanded]:not([aria-label]),
+    [data-slot="navigation-menu-trigger"],
+    [data-nav-trigger]
+  ):not(:has(svg))::after {
   content: "";
   flex: none;
   width: 0.75rem;
@@ -369,7 +398,16 @@
   mask-size: contain;
 }
 
-.headkit-nav li > a[aria-expanded="true"]::after {
+/* Open state. `data-state="open"` rides alongside `aria-expanded="true"` on
+   both shapes, so either attribute flips the chevron. */
+.headkit-nav
+  li
+  > :is(
+    a[aria-expanded],
+    button[aria-expanded]:not([aria-label]),
+    [data-slot="navigation-menu-trigger"],
+    [data-nav-trigger]
+  ):is([aria-expanded="true"], [data-state="open"]):not(:has(svg))::after {
   transform: rotate(180deg);
 }
 
