@@ -323,3 +323,163 @@
 .headkit-no-payment-note {
   color: var(--pb-green);
 }
+
+/* ==========================================================================
+   Manual-QA fixes — main nav dropdown, homepage brand block
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Main-nav parents get V1's chevron.
+
+   V1 puts the chevron inside `NavigationMenuTrigger` itself (lucide
+   `chevron-down`, `h-3 w-3 ml-1 relative top-[1px]`, rotated 180 while open).
+   The platform's trigger renders no chevron, and even if it did the storefront
+   passes `asChild` so the trigger collapses into the `<a>` and any children
+   the trigger wrapped would be dropped. A pseudo-element is therefore the only
+   way to express this without forking `components/ui/navigation-menu.tsx`.
+
+   Radix forwards `aria-expanded` (and `data-state`) onto the slotted anchor,
+   so `a[aria-expanded]` selects exactly the nav items that HAVE a submenu —
+   FAQ and the other childless items are plain `NavigationMenuLink`s and never
+   carry it. The tag matters: Search and Cart are `aria-expanded` BUTTONS in
+   the same nav, and a bare `[aria-expanded]` would have hung a chevron off
+   both icons.
+
+   Drawn as a mask rather than a background image so `currentColor` still
+   drives it — the anchor is the element that carries the (highlighted / hover)
+   colour. No transition: V1's trigger only animates `colors`, so its chevron
+   flips instantly.
+   -------------------------------------------------------------------------- */
+.headkit-nav li > a[aria-expanded]::after {
+  content: "";
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-left: 0.25rem;
+  position: relative;
+  top: 1px;
+  background-color: currentColor;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.headkit-nav li > a[aria-expanded="true"]::after {
+  transform: rotate(180deg);
+}
+
+/* --------------------------------------------------------------------------
+   The dropdown is a list, not a mega-menu grid.
+
+   Measured on V1: the panel is `px-10 py-5` with a single-column
+   `grid gap-5`, items at 16px/600 in sentence case — nine package links
+   stacked down the left edge, 416px tall. The platform's `MegaMenu` lays the
+   same nine links out as `md:grid-cols-4 lg:grid-cols-6`, UPPERCASE, `py-6`,
+   which reflows them into a ragged two-row block 160px tall.
+
+   Unlayered, so a plain single-class selector already outranks the
+   `@layer utilities` `lg:grid-cols-6` without `!important` (Tailwind v4
+   inverts layer order for important declarations — see the CTA note above).
+
+   `ul.grid` is unambiguous inside the nav: the only other list the mega-menu
+   renders is the nested child list, which is `flex flex-col`.
+   -------------------------------------------------------------------------- */
+.headkit-nav ul.grid {
+  grid-template-columns: 1fr;
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+/* V1 renders submenu labels as authored — "Silver Package", not "SILVER
+   PACKAGE". The `mb-2` under each label only exists to separate it from its
+   own grandchildren, so it is dropped for the items that have none; a menu
+   that later gains a third level keeps the platform spacing. */
+.headkit-nav ul.grid > li > a {
+  text-transform: none;
+}
+
+.headkit-nav ul.grid > li:not(:has(ul)) > a {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Homepage brand block regains the vertical Pebblr lockup.
+
+   V1's `AboutUs` block is a three-column grid with `Icon.logoVertical`
+   (`w-auto h-20 md:h-[140px]`) centred in the first column and the copy in the
+   remaining two. The platform `Callout` renders the copy only, at
+   `md:col-start-4`, leaving the first three of twelve columns empty — so the
+   artwork is missing rather than mispositioned, and a pseudo-element drops
+   straight into the hole the existing layout already leaves.
+
+   The SVG is V1's own `logo-vertical-svg.tsx` flattened to
+   `public/pebblr-logo-vertical.svg` (a new customer-owned file — not one of
+   the starter's `public/assets/` platform assets).
+
+   Placement is explicit only from `md` up. Below that the callout grid is
+   `grid-cols-1`, and a `grid-column: 1 / span 3` would generate two implicit
+   columns instead of stacking; auto-placement puts the lockup in its own row
+   above the copy, which is what V1 does on a phone. The grid carries no gap,
+   hence the mobile-only margin.
+   -------------------------------------------------------------------------- */
+.headkit-home .headkit-callout > .grid::before {
+  content: "";
+  height: 5rem;
+  margin-bottom: 1.5rem;
+  background-image: url("/pebblr-logo-vertical.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  /* V1 sizes the lockup by HEIGHT and lets the width follow
+     (`w-auto h-20 md:h-[140px]`); measured 205x140 on the live desktop site.
+     `contain` would instead fill whichever axis runs out first and rendered it
+     at ~217px tall inside this taller column. */
+  background-size: auto 5rem;
+}
+
+@media (min-width: 768px) {
+  .headkit-home .headkit-callout > .grid::before {
+    grid-column: 1 / span 3;
+    height: auto;
+    margin-bottom: 0;
+    background-size: auto 140px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   "About Pebblr Booth" is V1's OUTLINE button, not the gradient CTA.
+
+   Deliberate, scoped reversal of the gradient rule at the top of this file.
+   V1 renders the hero's "Choose a Package" as the purple->blue fill and this
+   secondary brand-block CTA as `border-2 border-black bg-white text-black`
+   at 50px/20px/700 — the same outline treatment already applied to the
+   section-header "View all" links. The platform `Callout` hands its FIRST
+   button `variant="default"`, so the gradient rule catches it; only this one
+   button is pulled back out.
+
+   Four classes deep, so it outranks the two-class gradient selector without
+   `!important`; both are unlayered, so specificity decides. `background-image:
+   none` is what actually clears the gradient — resetting only
+   `background-color` would leave the ramp painted on top.
+   -------------------------------------------------------------------------- */
+.headkit-home .headkit-callout .bg-primary.rounded-\[var\(--radius-button\)\] {
+  height: 50px;
+  padding: 0.5rem 1rem;
+  border: 2px solid #000;
+  background-image: none;
+  background-color: #fff;
+  color: #000;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.headkit-home
+  .headkit-callout
+  .bg-primary.rounded-\[var\(--radius-button\)\]:hover {
+  background-color: #fff;
+  box-shadow: var(--pb-button-shadow);
+}
