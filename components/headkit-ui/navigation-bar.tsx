@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/collapsible";
 import { cn, decodeHtmlEntities } from "@/lib/utils";
 import { HeaderActions } from "@/components/headkit-ui/header-actions";
+// PEBBLR: customer-owned phone-bar CTA (see overrides/header-actions.tsx).
+import { MobileBarActionExtras } from "@/overrides/header-actions";
 import { CartTriggerButton } from "@/components/headkit-ui/cart-drawer";
 
 /** A navigation tree node returned by headkit.menu.get(). */
@@ -186,6 +188,16 @@ export function NavigationBar({
               {desktopActions}
             </NavigationMenuItem>
           )}
+
+          {/* PEBBLR: store CTA in the phone header bar. The existing
+              `MobileHeaderActionExtras` slot renders inside the hamburger
+              SHEET, so a store whose live site keeps a booking CTA visible in
+              the bar at all times had no way to express that from the
+              customer-owned overrides layer. The button itself still lives in
+              overrides/header-actions.tsx — only the mount point is here. */}
+          <NavigationMenuItem className="md:hidden">
+            <MobileBarActionExtras />
+          </NavigationMenuItem>
 
           {/* Mobile sticky cart — outside the sheet; desktop uses HeaderActions */}
           <NavigationMenuItem className="md:hidden">

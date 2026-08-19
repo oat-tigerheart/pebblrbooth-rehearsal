@@ -34,17 +34,27 @@ export function HeaderActionExtras() {
 }
 
 /**
- * Extra mobile header actions (rendered after Account).
+ * Extra mobile SHEET actions (rendered after Account inside the menu).
  *
- * V1 shortens the label to "Book" on a phone, where the full pill would crowd
- * the logo out of the bar.
+ * Deliberately empty: V1 puts its booking CTA in the phone header bar itself,
+ * not behind the hamburger, so duplicating it inside the sheet would show the
+ * same CTA twice. The bar version is `MobileBarActionExtras` below.
  */
-export function MobileHeaderActionExtras() {
+export function MobileHeaderActionExtras(): null {
+  return null;
+}
+
+/**
+ * Extra mobile HEADER BAR actions (rendered beside the cart, outside the sheet).
+ *
+ * V1 keeps a booking CTA visible in the phone header at all times and shortens
+ * the label to "Book", where the full pill would crowd the logo out of the bar.
+ * A CTA that only exists behind a hamburger is a different product decision
+ * from the one the live site made, which is why this slot exists at all.
+ */
+export function MobileBarActionExtras() {
   return (
-    <Button
-      asChild
-      className="headkit-book-now h-9 px-3 text-base font-bold"
-    >
+    <Button asChild className="headkit-book-now h-9 px-3 text-base font-bold">
       <InstantLink href="/book-now" pendingVariant="text">
         Book
       </InstantLink>
