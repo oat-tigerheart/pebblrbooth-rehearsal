@@ -296,3 +296,30 @@
   background-clip: text;
   color: transparent;
 }
+
+/* --------------------------------------------------------------------------
+   PDP availability + reassurance line use the brand green.
+
+   V1 paints both "Available" and "No payment until booking confirmed!" in
+   pb-green (#47D496, measured). The platform ships lime-800 dot / lime-900
+   text, and its own comment explains why: lime-900 clears WCAG AA on white
+   where lime-800 does not.
+
+   Matching V1 here knowingly trades that away — #47D496 on white is roughly
+   1.9:1, below AA for text. It is the customer's live brand treatment and the
+   brief is to match it, but it is a real accessibility regression rather than a
+   neutral colour swap, and it is the one place in this pass where V1 fidelity
+   and contrast pull in opposite directions. Scoped to the PDP so availability
+   labels elsewhere keep the accessible scale.
+   -------------------------------------------------------------------------- */
+.headkit-product-detail .text-lime-900 {
+  color: var(--pb-green);
+}
+
+.headkit-product-detail .bg-lime-800 {
+  background-color: var(--pb-green);
+}
+
+.headkit-no-payment-note {
+  color: var(--pb-green);
+}

@@ -50,7 +50,10 @@ const AvailabilityStatus = ({ stockStatus, stockQuantity }: Props) => {
   }[status];
 
   const label = {
-    [AvailabilityStatusEnum.IN_STOCK]: "In Stock",
+    // PEBBLR: V1 says "Available", not "In Stock" — this merchant hires out
+    // event packages rather than shipping stock, so "in stock" is the wrong
+    // noun for what the shopper is being told.
+    [AvailabilityStatusEnum.IN_STOCK]: "Available",
     [AvailabilityStatusEnum.LOW_STOCK]: `Only ${stockQuantity} in Stock`,
     [AvailabilityStatusEnum.OUT_OF_STOCK]: "Out of Stock",
   }[status];

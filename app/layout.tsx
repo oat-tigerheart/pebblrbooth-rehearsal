@@ -259,6 +259,11 @@ export default async function RootLayout({
                         facebook: "https://www.facebook.com/pebblrbooth",
                         instagram: "https://www.instagram.com/pebblr.booth",
                       }}
+                      // Read off V1's live footer.
+                      contact={{
+                        phone: "0431 059 554",
+                        email: "smile@pebblrbooth.com.au",
+                      }}
                     />
                     <Toaster />
                   </CartProvider>

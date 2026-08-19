@@ -19,6 +19,7 @@ import type {
 } from "@headkit/sdk";
 import { ProductImageGallery } from "@/components/headkit-ui/product-image-gallery";
 import { ProductPrice } from "@/components/headkit-ui/product-price";
+import { Breadcrumb } from "@/components/headkit-ui/breadcrumb";
 import { pickFirstPrice } from "@/lib/price-display";
 import { VariantSwatch } from "@/components/headkit-ui/variant-swatch";
 import { AvailabilityStatus } from "@/components/headkit-ui/availability-status";
@@ -80,8 +81,8 @@ interface Props {
   product: StorefrontProduct;
   initialSearchParams?: Record<string, string>;
   /**
-   * Kept for callers / agent reference — not rendered on the storefront.
-   * BreadcrumbList JSON-LD is emitted separately for bots.
+   * Rendered above the product (PEBBLR — V1 parity). BreadcrumbList JSON-LD is
+   * still emitted separately for bots.
    */
   breadcrumbItems?: { name: string; uri: string; current: boolean }[];
   /** Color slug from URL path segment — enables path-based routing mode */
@@ -157,6 +158,7 @@ export function ProductDetail({
   productBasePath,
   stockSlot,
   stripeConfig,
+  breadcrumbItems,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -504,10 +506,15 @@ export function ProductDetail({
           : isAtStockLimit
             ? "Max qty reached"
             : isVariable && !selectedVariation
-              ? "Select options"
+              ? // PEBBLR: capitalised to match V1's disabled-state label.
+                "Select Options"
               : isQuoteMode
                 ? "Add to Quote"
-                : "Add to cart";
+                : // PEBBLR: V1's ENABLED label is "Add to Booking" — read from
+                  // its own source (src/components/product/add-to-cart.tsx),
+                  // where "Select Options" is only the DISABLED branch. Every
+                  // sale here is an event booking, not a shipped product.
+                  "Add to Booking";
 
   /**
    * Land a rejection against the group it belongs to, or in the banner when it
@@ -676,6 +683,18 @@ export function ProductDetail({
 
   return (
     <div className="headkit-product-detail">
+      {/* PEBBLR: V1 shows the trail (Home > Shop > Booths > Photo > Corporate
+          Package) above the product. The platform already builds and PASSES
+          `breadcrumbItems` from the route and already ships a Breadcrumb
+          component — it simply never rendered them, documenting the prop as
+          "kept for callers". Nothing new is computed here; the existing data is
+          finally shown. */}
+      {breadcrumbItems && breadcrumbItems.length > 0 ? (
+        <div className="mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         {/* Left: image gallery */}
         <ProductImageGallery
@@ -808,6 +827,19 @@ export function ProductDetail({
               Suspense boundary and no loading.tsx: the definitions arrive as
               props from the already-cached server page, and a boundary here
               risks re-introducing the recorded empty-static-shell defect. */}
+          {/* PEBBLR: V1 shows the price ABOVE the option fields ("from $989",
+              directly under the short description) — the shopper sees what the
+              package costs before being asked to configure it. The platform
+              renders it below the add-ons instead. */}
+          <div className="mb-6">
+            <ProductPrice
+              price={displayPrice}
+              regularPrice={displayRegularPrice}
+              onSale={isOnSale}
+              quoteMessage="Add to Quote for pricing"
+            />
+          </div>
+
           {/* PEBBLR: V1 introduces the option fields with a heading, measured on
               the live site as h3 `text-xl font-semibold` (20px/600) with a 20px
               gap beneath. Guarded on the same condition as the add-on groups so
@@ -840,6 +872,22 @@ export function ProductDetail({
             </Suspense>
           )}
 
+          {/* PEBBLR: V1 restates the line before the CTA ("1XCorporate Package
+              $989") so a shopper who has scrolled past a long add-on form can
+              see what they are about to book without scrolling back. Quantity
+              tracks the stepper below. */}
+          <div className="mb-4 flex items-baseline justify-between border-t border-gray-200 pt-4 text-lg font-medium text-primary">
+            <span>
+              {quantity}X{decodeHtmlEntities(product.name)}
+            </span>
+            <ProductPrice
+              price={displayPrice}
+              regularPrice={displayRegularPrice}
+              onSale={isOnSale}
+              quoteMessage=""
+            />
+          </div>
+
           {/* Availability status — hidden for HeadKit Quote checkout */}
           {!isQuoteMode && (
             <div className="mb-4">
@@ -855,16 +903,6 @@ export function ProductDetail({
               )}
             </div>
           )}
-
-          {/* Price */}
-          <div className="mb-6">
-            <ProductPrice
-              price={displayPrice}
-              regularPrice={displayRegularPrice}
-              onSale={isOnSale}
-              quoteMessage="Add to Quote for pricing"
-            />
-          </div>
 
           {/* A disabled button with no visible reason is the failure this
               avoids: the notice sits directly above the CTA row as well as in
@@ -990,6 +1028,18 @@ export function ProductDetail({
               <HeartIcon className="h-5 w-5" />
             </button>
           </div>
+
+          {/* PEBBLR: V1's reassurance line under the CTA — measured as
+              `text-pb-green font-semibold text-lg` (18px/600, #47D496). It is
+              the single most load-bearing sentence on the page for this
+              merchant: nothing is charged at checkout, every booking is a bank
+              transfer confirmed after the event is agreed. Suppressed in quote
+              mode, where there is no order to pay for at all. */}
+          {!isQuoteMode && !isGiftCard && (
+            <p className="headkit-no-payment-note mb-6 text-lg font-semibold">
+              No payment until booking confirmed!
+            </p>
+          )}
 
           {/* BNPL messaging — Stripe decides whether anything renders. Tracks the
               SELECTED VARIANT price, which is why it is a client-side value.

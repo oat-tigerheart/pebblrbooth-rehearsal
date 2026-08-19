@@ -37,9 +37,10 @@ const getErrorMessage = (reason?: string): string => {
       // the banner (ENG-784); this covers any direct/legacy link here.
       return "Your cart changed while your payment was in progress, so that payment was cancelled and nothing was charged. Please review your updated order and pay again.";
     case "session_expired":
-      return "Your cart session has expired. Please add items to your cart and try again.";
     case "no_session":
-      return "Your cart session has expired. Please start a new checkout.";
+      // PEBBLR: V1's empty-bag copy. Nothing was attempted and nothing failed,
+      // so this reads as an invitation rather than an incident.
+      return "Have a look around our selection of services and packages products to get ready for your next event.";
     case "processing_error":
       return "There was an error processing your order. Please try again.";
     default:
@@ -56,6 +57,14 @@ function ErrorContent() {
   const errorDetails =
     searchParams.get("error") ?? searchParams.get("message") ?? undefined;
   const errorMessage = getErrorMessage(reason);
+  /**
+   * PEBBLR: an empty / expired cart is not a payment failure — nothing was
+   * charged and nothing was attempted, so "Payment Failed" over a red alert
+   * icon reports an incident that never happened. V1 shows "Nothing in your
+   * bag!" and a "Start booking" CTA for the same state. Copy and branch only;
+   * the session reasons themselves are untouched.
+   */
+  const isEmptyCart = reason === "session_expired" || reason === "no_session";
 
   let parsedError: unknown = null;
   if (errorDetails) {
@@ -69,13 +78,18 @@ function ErrorContent() {
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl">
       <div className="bg-white rounded-lg shadow-lg p-8 text-center space-y-6">
+        {/* PEBBLR: the red alert icon stays for real failures only — over
+            "Nothing in your bag!" it turns an ordinary empty cart into an
+            incident. V1 shows no icon for that state. */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={1.5}
           stroke="currentColor"
-          className="w-16 h-16 mx-auto text-red-500"
+          className={
+            isEmptyCart ? "hidden" : "w-16 h-16 mx-auto text-red-500"
+          }
         >
           <path
             strokeLinecap="round"
@@ -84,7 +98,9 @@ function ErrorContent() {
           />
         </svg>
 
-        <h1 className="text-2xl text-gray-900">Payment Failed</h1>
+        <h1 className="text-2xl text-gray-900">
+          {isEmptyCart ? "Nothing in your bag!" : "Payment Failed"}
+        </h1>
         <p className="text-gray-600">{errorMessage}</p>
 
         {errorDetails && (
@@ -106,16 +122,27 @@ function ErrorContent() {
         )}
 
         <div className="space-y-4">
-          <Button onClick={() => router.push("/checkout")} className="w-full">
-            Try Again
-          </Button>
-          <Button
-            onClick={() => router.push("/")}
-            variant="secondary"
-            className="w-full"
-          >
-            Return to Home
-          </Button>
+          {isEmptyCart ? (
+            <Button onClick={() => router.push("/book-now")} className="w-full">
+              Start booking
+            </Button>
+          ) : (
+            <>
+              <Button
+                onClick={() => router.push("/checkout")}
+                className="w-full"
+              >
+                Try Again
+              </Button>
+              <Button
+                onClick={() => router.push("/")}
+                variant="secondary"
+                className="w-full"
+              >
+                Return to Home
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -109,6 +109,12 @@ interface FooterProps {
   siteName?: string;
   description?: string;
   socialLinks?: SocialLinks;
+  /**
+   * PEBBLR: optional "Contact" block in the right-hand footer column (phone /
+   * email). Taken as a prop rather than hardcoded so the store's real details
+   * live in app/layout.tsx and this stays a generic capability.
+   */
+  contact?: { phone?: string; email?: string };
   paymentMethods?: PaymentMethod[];
   /** When true, show the mailing-list subscribe box (email marketing connected). */
   showSubscribe?: boolean;
@@ -241,6 +247,7 @@ export function Footer({
   siteName,
   description,
   socialLinks,
+  contact,
   paymentMethods = DEFAULT_PAYMENT_METHODS,
   showSubscribe = false,
   hidePaymentIcons = false,
@@ -344,6 +351,21 @@ export function Footer({
           {showSubscribe ? <FooterSubscribe /> : null}
           {hasSocialLinks && socialLinks ? (
             <SocialConnect socialLinks={socialLinks} />
+          ) : null}
+          {contact?.phone || contact?.email ? (
+            <div className="headkit-footer-contact">
+              <div className="mb-[6px] text-lg font-semibold">Contact</div>
+              <div className="flex flex-col gap-1">
+                {contact.phone ? (
+                  <a href={`tel:${contact.phone.replace(/\s+/g, "")}`}>
+                    Call us on {contact.phone}
+                  </a>
+                ) : null}
+                {contact.email ? (
+                  <a href={`mailto:${contact.email}`}>{contact.email}</a>
+                ) : null}
+              </div>
+            </div>
           ) : null}
         </div>
       </div>
