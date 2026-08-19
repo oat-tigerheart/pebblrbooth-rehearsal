@@ -45,11 +45,15 @@ error, no test failure, just the style quietly gone. Write selectors that cover 
 shape AND any announced upcoming one, and add a guard that disables the override if the
 platform later ships the thing itself.
 
-The nav chevron rule in `overrides/styles.css` is the worked example: it matches the `<a>`
-that `asChild` produces today and the native `<button>` that platform PR #295 switches to,
-excludes the nav's icon buttons via `:not([aria-label])`, and stands down via
-`:not(:has(svg))` if the platform starts rendering its own chevron. Read that comment block
-before touching any override that depends on platform element types.
+The nav chevron rule in `overrides/styles.css` is the worked example, and it has now paid
+off: it was written to match both the `<a>` that `asChild` produced and the native
+`<button>` that platform PR #295 was going to switch to, so when #295 was ported the
+chevrons never dropped. Both arms are live at once — a nav parent takes the `<button>` arm
+only when its WordPress URL is non-navigable (`#`, `tel:`, `mailto:`), so editing a menu URL
+in WordPress moves that one parent between arms. The rule also excludes the nav's icon
+buttons via `:not([aria-label])` and stands down via `:not(:has(svg))` if the platform ever
+ships its own chevron. Read that comment block before touching any override that depends on
+platform element types.
 
 ## Monorepo context
 

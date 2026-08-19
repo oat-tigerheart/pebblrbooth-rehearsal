@@ -338,16 +338,24 @@
    trigger wrapped would be dropped. A pseudo-element is therefore the only way
    to express this without forking `components/ui/navigation-menu.tsx`.
 
-   The selector deliberately matches BOTH trigger shapes:
+   The selector matches BOTH trigger shapes, and since platform PR #295 landed
+   here BOTH are live at once — neither arm is dead code. Which one a parent
+   gets depends on its WordPress menu URL:
 
-     a[aria-expanded]        — today. `asChild` collapses the trigger into the
-                               `InstantLink`, and Radix forwards `aria-expanded`
-                               (and `data-state`) onto the slotted anchor.
-     button[aria-expanded]   — after platform PR #295, which drops `asChild` so
-                               the trigger renders as Radix's native `<button>`
-                               (it stops polluting the URL with `/#`). That PR
-                               is not in this clone yet; the rule is written now
-                               so no gap opens at the next template pull.
+     a[aria-expanded]        — parents with a real in-app URL (Photobooth
+                               Packages, Booths, Customise). `asChild` collapses
+                               the trigger into the `InstantLink`, and Radix
+                               forwards `aria-expanded` (and `data-state`) onto
+                               the slotted anchor.
+     button[aria-expanded]   — parents whose Custom Link URL is not in-app
+                               (`#`, `tel:`, `mailto:` — today that is Events).
+                               #295 drops `asChild` for those so Radix renders
+                               its native `<button>`, which is what stopped the
+                               click polluting the URL with `/#`.
+
+   So editing a parent's URL in WordPress silently moves it between the two
+   arms. Removing either one breaks a subset of the nav, not all of it — which
+   is exactly the kind of partial failure that is easy to miss in a spot check.
      [data-slot=…] / [data-nav-trigger]
                              — forward hooks. Inert until the platform ships an
                                explicit trigger attribute; free insurance if the
