@@ -143,8 +143,8 @@ export async function HomeContent() {
       <Hero
         title="Adelaide's best Photobooth hire"
         button={{ text: "Choose a Package", url: "/book-now" }}
-        image={{
-          src: "/pebblr-hero.jpg",
+        video={{
+          webm: "/pebblr-hero.webm",
           alt: "Guests posing together in a Pebblr Booth at an Adelaide event",
         }}
       />

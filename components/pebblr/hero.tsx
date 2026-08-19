@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { InstantLink } from "@/components/headkit-ui/instant-link";
 import { Star1, Star2 } from "@/components/pebblr/star-icons";
@@ -6,40 +5,43 @@ import { Star1, Star2 } from "@/components/pebblr/star-icons";
 interface HeroProps {
   title: string;
   button: { text: string; url: string };
-  image: { src: string; alt: string };
+  video: { webm: string; alt: string };
 }
 
 /**
- * Homepage hero — brand photography under a purple->blue wash,
+ * Homepage hero — a silent looping background video under a purple->blue wash,
  * with the headline and primary CTA anchored bottom-left on mobile and
  * centre-left on desktop. Ported from V1 `src/components/hero/hero.tsx`.
  *
- * V1 backs this with a looping 33 MB webm (plus an unused 32 MB mp4). Neither
- * ships here: the platform's repo mirror stopped advancing the moment those
- * blobs entered the tree — it had mirrored the 4 KB commit before them in about
- * five seconds and never picked up the 45 MB one, or a 12 MB retry, across an
- * hour. The still below is the video's own opening frame, so the hero reads the
- * same on load; what is lost is the motion after it.
+ * webm is the only source. V1 ships an mp4 beside it but keeps that `<source>`
+ * commented out, so the file is never requested on the live site either, and
+ * carrying a second 32 MB blob buys nothing — every engine this storefront
+ * targets decodes VP9.
  *
- * Restoring the video means hosting it off-repo — the WordPress media library
- * is the obvious candidate — rather than re-adding the blob.
+ * The video was briefly replaced by a still: the platform's repo mirror
+ * enforced a 10 MiB per-blob cap and silently stopped advancing when the
+ * 10.23 MiB webm entered the tree. That cap is now 15 MiB, so the motion is
+ * back.
  *
- * `priority` is deliberate: this is the LCP element on the homepage.
+ * `poster` is the mobile CTA still. Without it the hero is a black rectangle
+ * until the first frame decodes, which on a cold 4G load is the whole LCP
+ * window.
  */
-export function Hero({ title, button, image }: HeroProps) {
+export function Hero({ title, button, video }: HeroProps) {
   return (
     <section className="headkit-hero-carousel mx-5">
       <div className="relative aspect-[2/3] max-h-[700px] w-full overflow-hidden rounded-[20px]">
-        <Image
-          src={image.src}
-          alt={image.alt}
-          fill
-          priority
-          fetchPriority="high"
-          quality={75}
-          sizes="100vw"
-          className="object-cover object-center"
-        />
+        <video
+          autoPlay
+          muted
+          playsInline
+          loop
+          poster="/cta-mobile.png"
+          className="h-full w-full object-cover"
+          aria-label={video.alt}
+        >
+          <source src={video.webm} type="video/webm" />
+        </video>
 
         {/* Brand wash. V1 uses `from-pb-blue/50 to-pb-purple/50` on a `to-bl`
             axis — blue top-right, purple bottom-left. */}
