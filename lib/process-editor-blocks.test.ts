@@ -155,6 +155,27 @@ describe("hasEditorSectionClass", () => {
   });
 });
 
+describe("section title with inline markup", () => {
+  /*
+   * PEBBLR regression. The extractor's capture used to be `[^<]*`, which could
+   * not cross a nested tag, so a heading the editor had merely BOLDED came back
+   * as "" and the section rendered with no heading. Bolding a heading is an
+   * everyday thing to do in the WordPress editor, and it failed silently — it
+   * is what dropped "Make your event unforgettable with Pebblr Booth" from a
+   * live storefront's homepage.
+   */
+  it("reads a bolded heading and strips the inline tags", () => {
+    const BOLD_TITLE_SECTION = `<div class="wp-block-group headkit-hilight headkit-block-section"><div class="wp-block-group__inner-container"><h2 class="wp-block-heading headkit-block-title"><strong>Make your event unforgettable</strong></h2></div></div>`;
+    const [block] = processEditorBlocks(BOLD_TITLE_SECTION, []);
+    expect(block?.title).toBe("Make your event unforgettable");
+  });
+
+  it("still reads a plain heading unchanged", () => {
+    const [block] = processEditorBlocks(HILIGHT_SECTION, []);
+    expect(block?.title).toBe("About Us");
+  });
+});
+
 describe("category / brand / post hydration from attrs", () => {
   it("merges categories, brands, and posts onto processed blocks", () => {
     const CAT_SECTION = `<div class="wp-block-group headkit-category-carousel headkit-block-section"><div class="wp-block-group__inner-container"><h2 class="wp-block-heading headkit-block-title">Shop by Category</h2></div></div>`;

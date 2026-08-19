@@ -540,11 +540,24 @@ export function hasEditorSectionClass(
 // ---------------------------------------------------------------------------
 
 function extractTitle(html: string): string {
+  /*
+   * PEBBLR: `[^<]*` used to sit where `[\s\S]*?` is now, which meant the
+   * capture could not cross a nested tag — so a section heading the editor had
+   * merely BOLDED (`<h2 class="headkit-block-title"><strong>…</strong></h2>`)
+   * extracted as "" and the section rendered with no heading at all. That is
+   * what dropped "Make your event unforgettable with Pebblr Booth" from this
+   * store's homepage. Bolding a heading is an ordinary thing to do in the
+   * WordPress editor and it failed silently.
+   *
+   * Inline markup is stripped rather than preserved: the title is rendered as
+   * text by SectionHeader, so tags would show up literally.
+   */
   const m = html.match(
-    /<h[1-6][^>]*class="[^"]*headkit-block-title[^"]*"[^>]*>([^<]*)<\/h[1-6]>/i,
+    /<h[1-6][^>]*class="[^"]*headkit-block-title[^"]*"[^>]*>([\s\S]*?)<\/h[1-6]>/i,
   );
   const cap1 = m?.[1];
-  return cap1 !== undefined ? decodeEntities(cap1.trim()) : "";
+  if (cap1 === undefined) return "";
+  return decodeEntities(cap1.replace(/<[^>]+>/g, "").trim());
 }
 
 function extractDescription(html: string, classList: string[]): string {
