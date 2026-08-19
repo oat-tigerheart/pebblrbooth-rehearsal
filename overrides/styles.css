@@ -261,3 +261,38 @@
 .headkit-footer-payment-methods {
   display: none;
 }
+
+/* ==========================================================================
+   Final pass — remaining V1 deltas
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Header "Book now" pill sits ahead of the icon row.
+
+   The platform mounts `HeaderActionExtras` between Account and Cart; V1 puts
+   its CTA to the LEFT of the whole icon group. `order` moves it there without
+   forking the platform header to add a slot in the right position.
+   -------------------------------------------------------------------------- */
+.headkit-book-now {
+  order: -1;
+}
+
+/* --------------------------------------------------------------------------
+   PDP title is gradient-filled, not editorial ink.
+
+   V1: `text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r`,
+   measured 30px/700 over the same purple->blue ramp as the buttons. The
+   platform h1 is 36px in --color-editorial-ink.
+
+   `color: transparent` is what makes background-clip visible; it beats the
+   `h1, h2 { color: var(--color-editorial-ink) }` base rule because this file is
+   unlayered and that one sits in `@layer base`.
+   -------------------------------------------------------------------------- */
+.headkit-product-detail h1 {
+  font-size: 30px;
+  font-weight: 700;
+  background-image: var(--pb-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

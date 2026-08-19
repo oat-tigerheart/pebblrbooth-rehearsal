@@ -250,13 +250,14 @@ export default async function RootLayout({
                       iconUrl={branding.iconUrl}
                       showSubscribe={showFooterSubscribe}
                       hidePaymentIcons={checkoutMode === "quote"}
+                      // Pebblr's own channels. The template ships HeadKit's
+                      // five (Instagram/Discord/GitHub/LinkedIn/YouTube),
+                      // which pointed this store's shoppers at the platform
+                      // vendor. V1 links exactly two, both taken from the live
+                      // footer.
                       socialLinks={{
-                        instagram: "https://www.instagram.com/headkitcommerce",
-                        discord: "https://discord.gg/bSNe29JtsX",
-                        github: "https://github.com/headkit-commerce",
-                        linkedin:
-                          "https://www.linkedin.com/company/headkit-commerce/",
-                        youtube: "https://www.youtube.com/@headkit-commerce",
+                        facebook: "https://www.facebook.com/pebblrbooth",
+                        instagram: "https://www.instagram.com/pebblr.booth",
                       }}
                     />
                     <Toaster />
