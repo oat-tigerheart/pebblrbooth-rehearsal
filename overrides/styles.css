@@ -161,3 +161,34 @@
 .headkit-section-header > div > a:hover {
   box-shadow: var(--pb-button-shadow);
 }
+
+/* --------------------------------------------------------------------------
+   Hero / CTA headline lift.
+
+   V1 applies `drop-shadow-pb-text` to the white headline sitting over hero and
+   CTA artwork: measured on the live site as
+   `filter: drop-shadow(rgba(0,0,0,0.2) 6px 6px 10px)`. Without it the headline
+   loses contrast wherever the photography behind it is light.
+
+   The line-height rule needs the `@layer base` wrapper and the `!important`.
+   app/globals.css sets `h1, h2 { line-height: normal !important }` inside
+   `@layer base` to force WordPress's "Auto" leading over utility classes, and
+   an important declaration beats any normal one regardless of layer — so
+   `leading-[1.3]` as a utility is silently dropped (measured: V1 renders 78px
+   at 60px, V2 rendered `normal`). Escalating specificity outside the layer
+   cannot win either: for important declarations the layer order INVERTS, and
+   unlayered importants rank lowest of all. The only rule that beats it is
+   another important in the SAME layer with higher specificity, which is what
+   re-opening `@layer base` and matching on a class buys.
+   -------------------------------------------------------------------------- */
+.pb-hero-title,
+.pb-cta-title {
+  filter: drop-shadow(6px 6px 10px rgb(0 0 0 / 0.2));
+}
+
+@layer base {
+  .pb-hero-title,
+  .pb-cta-title {
+    line-height: 1.3 !important;
+  }
+}
