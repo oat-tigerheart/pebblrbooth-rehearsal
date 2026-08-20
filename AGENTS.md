@@ -113,6 +113,33 @@ arithmetic on top of it is already right (13.59 = 12.35 + 1.24).
 This class of bug is invisible on a zero-tax store, which is why it survived months upstream.
 Keep a taxed fixture in any test that asserts money.
 
+## Footer: the brandmark asset, and content the footer cannot fetch
+
+Two traps live in the footer brand column, both recorded because neither is
+visible in the code.
+
+**The Dashboard branding PNG carries its own whitespace.** It is 180x180 and
+*fully opaque white* — not transparent — with the monogram inked from (37,27)
+to (142,152), i.e. 58.9% of the width and 70% of the height. Sizing its box to
+V1's mark therefore shows a mark ~40% too small, so `overrides/styles.css`
+scales the IMAGE past the box and offsets it so the ink lands on the box's
+top-left. The box **must** keep `overflow: hidden`: the leftover margin is
+opaque and paints over the description beside it (it shaved the first letter off
+every line before it was clipped). Re-derive the numbers from the asset rather
+than trusting these — see the comment block at the end of that file.
+
+**The footer takes store content through props, never hardcoded.** `contact`
+and `brandSlot` on `components/headkit-ui/footer.tsx` are deliberately generic
+capabilities; Pebblr's real values live at the `<Footer>` call in
+`app/layout.tsx`. Keep new footer content on that pattern, and prefer
+upstreaming the slot to the platform starter over growing store strings inside
+the component.
+
+`components/pebblr/google-rating.tsx` holds a **hand-copied** rating. V1 reads
+it live from Google Places; this repo has no Places integration and no key, so
+the number must be updated by hand — the constant's comment carries the date
+and provenance. Do not add an env var for a fetch that does not exist.
+
 ## Monorepo context
 
 This app lives at `apps/starter/` in the HeadKit platform monorepo. Customer repos are typically a flattened copy of this tree (no `apps/starter/` prefix).
