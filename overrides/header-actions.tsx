@@ -48,14 +48,16 @@ export function MobileHeaderActionExtras(): null {
 /**
  * Extra mobile HEADER BAR actions (rendered beside the cart, outside the sheet).
  *
- * V1 keeps a booking CTA visible in the phone header at all times and shortens
- * the label to "Book", where the full pill would crowd the logo out of the bar.
+ * V1 keeps a booking CTA visible in the phone header at all times. The label is
+ * shortened to "Book", where the full label would crowd the logo out of the bar.
+ * The SIZE is the nav pill's (`PEBBLR_CTA`, 50px / 20px) — V1's phone pill is
+ * 89x50 / 20px, i.e. full nav height, not a shrunken bar variant.
  * A CTA that only exists behind a hamburger is a different product decision
  * from the one the live site made, which is why this slot exists at all.
  */
 export function MobileBarActionExtras() {
   return (
-    <Button asChild className="headkit-book-now h-9 px-3 text-base font-bold">
+    <Button asChild className={`headkit-book-now ${PEBBLR_CTA}`}>
       <InstantLink href="/book-now" pendingVariant="text">
         Book
       </InstantLink>
