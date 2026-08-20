@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { InstantLink } from "@/components/headkit-ui/instant-link";
 import { Star1, Star2 } from "@/components/pebblr/star-icons";
+import { PEBBLR_CTA } from "@/overrides/cta-size";
 
 interface HeroProps {
   title: string;
@@ -75,7 +76,7 @@ export function Hero({ title, button, video }: HeroProps) {
               </h1>
               <div>
                 <InstantLink href={button.url} pendingVariant="text">
-                  <Button>{button.text}</Button>
+                  <Button className={PEBBLR_CTA}>{button.text}</Button>
                 </InstantLink>
               </div>
             </div>

@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { InstantLink } from "@/components/headkit-ui/instant-link";
 import { Star1, Star2 } from "@/components/pebblr/star-icons";
+import { PEBBLR_CTA, PEBBLR_CTA_WIDE } from "@/overrides/cta-size";
 
 /**
  * Closing "Book Pebblr Booth today" banner. Ported from V1
@@ -63,7 +64,7 @@ export function CtaBanner() {
                 </h2>
                 <div>
                   <InstantLink href="/book-now" pendingVariant="text">
-                    <Button>Book Now</Button>
+                    <Button className={PEBBLR_CTA_WIDE}>Book Now</Button>
                   </InstantLink>
                 </div>
               </div>
@@ -76,7 +77,7 @@ export function CtaBanner() {
               </div>
               <div className="hidden items-center justify-end md:col-span-3 md:col-start-8 md:flex">
                 <InstantLink href="/book-now" pendingVariant="text">
-                  <Button size="lg">Book Now</Button>
+                  <Button className={PEBBLR_CTA}>Book Now</Button>
                 </InstantLink>
               </div>
             </div>

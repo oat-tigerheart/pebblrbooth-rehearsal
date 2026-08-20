@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { InstantLink } from "@/components/headkit-ui/instant-link";
+import { PEBBLR_CTA } from "@/overrides/cta-size";
 
 interface StepProps {
   number: number;
@@ -118,7 +119,7 @@ export function StepsSection() {
 
       <div className="text-center">
         <InstantLink href="/book-now" pendingVariant="text">
-          <Button>Book now</Button>
+          <Button className={PEBBLR_CTA}>Book now</Button>
         </InstantLink>
       </div>
     </section>

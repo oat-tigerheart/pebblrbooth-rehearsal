@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { InstantLink } from "@/components/headkit-ui/instant-link";
+import { PEBBLR_CTA } from "@/overrides/cta-size";
 
 /**
  * Extra desktop header actions (rendered between Account and Cart).
@@ -24,7 +25,7 @@ export function HeaderActionExtras() {
   return (
     <Button
       asChild
-      className="headkit-book-now ml-5 h-[50px] px-4 text-[20px] font-bold"
+      className={`headkit-book-now ml-5 ${PEBBLR_CTA}`}
     >
       <InstantLink href="/book-now" pendingVariant="text">
         Book now
