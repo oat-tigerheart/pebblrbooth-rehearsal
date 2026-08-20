@@ -135,10 +135,32 @@ capabilities; Pebblr's real values live at the `<Footer>` call in
 upstreaming the slot to the platform starter over growing store strings inside
 the component.
 
-`components/pebblr/google-rating.tsx` holds a **hand-copied** rating. V1 reads
-it live from Google Places; this repo has no Places integration and no key, so
-the number must be updated by hand — the constant's comment carries the date
-and provenance. Do not add an env var for a fetch that does not exist.
+`components/pebblr/google-rating.tsx` reads its rating **live** from the Google
+Places API via `lib/google-places.ts` (`GOOGLE_API_KEY` + `GOOGLE_MAP_PLACE_ID`,
+set on this store's Vercel project only — absent locally, which is the fallback
+path). The old hand-copied number survives solely as `FALLBACK_RATING`.
+
+Two things about it are non-obvious:
+
+**The live value and the fallback are both 5.0**, so a dead key renders exactly
+like a healthy fetch. The badge therefore emits `data-rating-source` and
+`data-rating-count` — invisible, and the only way to tell the two apart on a
+deployed page. Check the attribute before believing the number is live.
+
+**Caching is Cache Components, not V1's fetch-level `next.revalidate`.** V1
+passes `next: { revalidate: 86400, tags: [...] }`; this app runs
+`cacheComponents: true`, so the module uses `"use cache: remote"` +
+`cacheLife("days")` + `cacheTag("google-places-rating")` instead — same 24h,
+same tag string. It must stay cached for a second reason: the badge is mounted
+from the root layout, and an un-cached read there poisons static prerender
+site-wide. The tag is intentionally outside the `headkit:*` contract in
+`lib/cache-tags.ts`, so `/api/revalidate` cannot purge it — nothing publishes
+that event; the 24h expiry is the refresh.
+
+The fetch is split into an un-cached, testable `fetchGooglePlacesRating()` plus
+a thin cached wrapper, because `cacheLife()` throws outside a Next runtime and
+so the wrapper cannot run under Vitest. `lib/stripe-config.ts` does the same and
+explains why.
 
 ## Monorepo context
 
