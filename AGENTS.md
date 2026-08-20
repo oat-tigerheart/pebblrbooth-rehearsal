@@ -89,6 +89,15 @@ setting; and the order shipping-METHOD line in `app/checkout/success/[orderId]/p
 still prints the ex-tax figure beside an inclusive Shipping row. Closing any of them needs a
 commerce change — do not patch around them locally.
 
+**Separate, still-open: order pages render order money 100x small.** Order #4281 on
+2026-08-20 checked out at A$1,359.00 and its confirmation page printed A$13.59 for the line,
+the Subtotal, the Total and the Payment row, with "Includes tax A$1.24". The `Total` and
+`Payment` rows read `order.totals.totalPrice` and are untouched by the tax port, so the
+scaling is in the ORDER data, not in this repo — the cart and checkout pages, fed by the cart
+path, are correct. The per-add-on suffixes are also correct because they come from
+`item.addons[].price`, not from a total. Do not "fix" this in the storefront; the tax-inclusive
+arithmetic on top of it is already right (13.59 = 12.35 + 1.24).
+
 This class of bug is invisible on a zero-tax store, which is why it survived months upstream.
 Keep a taxed fixture in any test that asserts money.
 
