@@ -30,8 +30,20 @@ Use **CSS hook classes** documented in [`overrides/README.md`](./overrides/READM
 | Hide footer payment icons     | `overrides/styles.css` → `.headkit-footer-payment-methods`   |
 | Restyle callout / promo       | `overrides/styles.css` → `.headkit-callout`                  |
 | Add header phone / extra icon | `overrides/header-actions.tsx` → `HeaderActionExtras`        |
+| Size a primary CTA            | `overrides/cta-size.ts` → `PEBBLR_CTA` (see below)           |
 | New landing page              | `app/<route>/page.tsx` + optional local components           |
 | Change checkout logic         | `lib/` + `app/checkout/` (behaviour, not cosmetics)          |
+
+## Primary CTA sizing lives in one constant
+
+Every Pebblr primary CTA — the header nav pill, the hero, the steps section, both arms of
+the closing CTA banner — is sized from `overrides/cta-size.ts` (`PEBBLR_CTA`, plus
+`PEBBLR_CTA_WIDE` for the roomier mobile banner button), applied as `className` at the call
+site. Do NOT retune `components/ui/button.tsx`'s `default`/`lg` size variants to move these:
+that primitive is shared across the whole storefront, checkout included.
+
+One deliberate divergence from V1: V1 renders the closing CTA banner button 44px tall while
+its nav pill is 50px. Here both are 50px, per the captain's nav-size instruction.
 
 ## Missing hook?
 
