@@ -55,6 +55,43 @@ buttons via `:not([aria-label])` and stands down via `:not(:has(svg))` if the pl
 ships its own chevron. Read that comment block before touching any override that depends on
 platform element types.
 
+## Tax: Store API totals are tax-EXCLUSIVE
+
+Pblr is a 10%-GST store, so this is live here, not theoretical.
+
+The WooCommerce Store API reports **every total** (`line_subtotal`, `line_total`,
+`total_items`, `total_discount`, …) tax-exclusive, with the tax in a sibling `*_tax` field,
+and the totals ignore the store's "display prices including tax" setting. (The per-item
+`prices` object is different — the Store API computes that one _according_ to that setting.)
+Any shopper-facing figure derived from a total must add the sibling back. Never render a
+Store API total on its own — that is what made every cart, checkout and order line quote
+~9.1% under the PDP price until PR #299 was ported here.
+
+Use `lib/cart-prices.ts`; do not re-derive the addition inline. Cart surfaces:
+`lineDisplayTotal` (its third `source` argument is REQUIRED — pass the cart, or `null` when
+there is genuinely none in scope), `cartItemsDisplayTotal`, `cartDiscountDisplayTotal`,
+`couponDiscountDisplayTotal`. Order surfaces: `orderItemsDisplayTotal`,
+`orderDiscountDisplayTotal`. Both: `shippingDisplayTotal` — the one helper that serves a cart
+AND an order, because `totalShippingTax` is the only cart-level sibling the order path really
+populates. The addition is gated on `hasHostedCheckout` (`lib/hosted-checkout.ts`): a Shopify
+cart already reports tax-inclusive totals, so adding the sibling there would double-count.
+
+**An ORDER must never use the cart-level ITEMS or DISCOUNT helpers.** wc/v3 orders carry no
+`total_items_tax`, so commerce hard-codes `totalItemsTax` and `totalDiscountTax` to `"0"` —
+adding a zero sibling to an ex-tax total just yields an ex-tax total. The per-LINE sibling
+taxes ARE populated on the order path, so an order's subtotal and discount must be summed
+from the line items, which is what the two `order*` helpers do.
+
+**Known limitations, all upstream** (see the two blocks at the top of `lib/cart-prices.ts`):
+the addition is unconditional and assumes `woocommerce_prices_include_tax = yes` (true for
+Pblr); the sale strikethrough reads the per-item `prices` object, which follows a different
+setting; and the order shipping-METHOD line in `app/checkout/success/[orderId]/page.tsx`
+still prints the ex-tax figure beside an inclusive Shipping row. Closing any of them needs a
+commerce change — do not patch around them locally.
+
+This class of bug is invisible on a zero-tax store, which is why it survived months upstream.
+Keep a taxed fixture in any test that asserts money.
+
 ## Monorepo context
 
 This app lives at `apps/starter/` in the HeadKit platform monorepo. Customer repos are typically a flattened copy of this tree (no `apps/starter/` prefix).
