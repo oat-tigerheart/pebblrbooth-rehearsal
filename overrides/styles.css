@@ -594,11 +594,20 @@
   flex-basis: 100%;
 }
 
-/* The LAYOUT box is V1's mark exactly: 56x66 of ink, so the 1rem flex gap and
-   the mobile row both behave as they did before this rule grew. */
+/* The LAYOUT box is V1's mark exactly — 56 x 66.5 of ink — so the 1rem flex gap
+   and the mobile row both behave as they did before this rule grew.
+
+   `overflow: hidden` is load-bearing, not tidiness. The image below is larger
+   than this box and is offset so that its INK starts at the box's top-left,
+   which leaves the PNG's white margin hanging out of all four sides. That
+   margin is OPAQUE white, and on the right it lands on top of the description:
+   measured on the 1440 deployment, it painted over the first ~3.5px of every
+   line of the blurb, shaving the left stroke off each opening letter. Clipping
+   to the box throws away only the white — the ink is exactly this size. */
 .headkit-footer a[aria-label="home"] > div.h-9 {
-  height: 66px;
+  height: 66.5px;
   width: 56px;
+  overflow: hidden;
 }
 
 /* ...but the V2 mark is a raster PNG with whitespace baked in, so the IMAGE is
@@ -610,15 +619,15 @@
    Matching the INK instead of the box means rendering the PNG at
    180 x 56/106 = 95px, at which its ink measures 55.9 x 66.5 — V1's mark.
 
-   The 95px square then overhangs the 56x66 box by the PNG's own padding,
-   scaled: 37/180 x 95 = 19.5px each side, 27/180 x 95 = 14.25px top and
-   bottom. Pulling it up and left by exactly that puts the ink's top-left on the
-   box's top-left, which is where V1's tightly-cropped SVG starts — so the ink
-   top sits on the description's first line and the ink's left edge on the
-   column's left edge. `.relative` is already on the box (platform class), so
-   the offsets need no new positioning context. The bleed is invisible: the PNG
-   is opaque WHITE on a white footer, and 19.5px of left bleed still lands
-   inside the footer's own 20px (`px-5`) mobile gutter, so nothing overflows.
+   The 95px square then overhangs the box by the PNG's own padding, scaled:
+   37/180 x 95 = 19.5px each side, 27/180 x 95 = 14.25px top and bottom.
+   Pulling it up and left by exactly that puts the ink's top-left on the box's
+   top-left, which is where V1's tightly-cropped SVG starts — so the ink top
+   sits on the description's first line and the ink's left edge on the column's
+   left edge. `.relative` is already on the box (platform class), so the offsets
+   need no new positioning context, and the box clips the leftover white margin
+   away (see the `overflow: hidden` note on that rule — the white is opaque and
+   was painting over the blurb).
 
    Only the `img` arm is offset. The platform's fallback `svg` (shown when
    Dashboard branding has no icon) is tightly cropped like V1's, so it just
