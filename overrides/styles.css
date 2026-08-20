@@ -530,3 +530,64 @@
   background-color: #fff;
   box-shadow: var(--pb-button-shadow);
 }
+
+/* --------------------------------------------------------------------------
+   Footer brand lockup: brandmark BESIDE the blurb, at V1's size.
+
+   V1 (`src/components/layout/footer.tsx` lines 66-79) renders the footer brand
+   as a row: `shrink-0 pr-4` holding a `max-w-[60px]` box with the brandmark at
+   `h-[66px]`, then the description. Measured on the live V1 site at 1440 AND
+   at 390: mark 56x66 at the column's left edge, description starting exactly
+   16px to its right, five wrapped lines on mobile. There is no breakpoint in
+   V1 — the row holds all the way down — so this override adds none either.
+
+   The platform column is `flex flex-col gap-4` with a 36px icon stacked over
+   the description, so only the axis and the icon box need changing; `gap-4` is
+   already V1's 16px, restated here so a platform gap change cannot silently
+   move the text.
+
+   Two things make this survive a template pull:
+
+   - The stand-down guard is `div.flex-col`. If the platform ever ships the row
+     lockup itself it drops `flex-col` from that column, this rule stops
+     matching, and the platform's own layout is left alone rather than being
+     fought. Same idea for `div.h-9` on the icon box.
+   - `:has(> a[aria-label="home"])` is what identifies the brand column.
+     `.flex.flex-col.gap-4` alone appears all over the site; the home link is
+     the only thing unique to this column, and it is the same anchor V1 uses.
+
+   The V2 mark is a raster `<img>` from Dashboard branding (a square 180x180
+   PNG), not V1's inline SVG, so the size lives on BOTH the wrapper and the
+   image and `object-fit: contain` keeps the aspect ratio — the box is V1's
+   60x66, the square logo lands 60x60 inside it, `left top` keeping its top
+   edge on the description's first line the way V1's does. The `svg` arm covers
+   the platform's fallback mark, which renders in place of the `<img>` whenever
+   Dashboard branding has no icon.
+
+   Known limitation, upstream: the image keeps `sizes="36px"`, which the
+   browser resolves against DPR alone, NOT against this CSS box, so it still
+   picks a ~96w candidate for a 60px slot. It is a flat two-tone monogram so it
+   holds up, but closing this properly needs the platform footer to widen its
+   `sizes` hint.
+   -------------------------------------------------------------------------- */
+.headkit-footer div.flex-col:has(> a[aria-label="home"]) {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.headkit-footer div.flex-col:has(> a[aria-label="home"]) > a {
+  flex-shrink: 0;
+}
+
+.headkit-footer a[aria-label="home"] > div.h-9 {
+  height: 66px;
+  width: 60px;
+}
+
+.headkit-footer a[aria-label="home"] > div.h-9 > :is(img, svg) {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  object-position: left top;
+}
