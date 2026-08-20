@@ -29,6 +29,7 @@ import { BrandingIconsProvider } from "@/components/branding/branding-icons-prov
 import { DeferredThirdPartyScripts } from "@/components/headkit-ui/deferred-third-party-scripts";
 import { getEmailMarketingStatus } from "@/lib/email-marketing";
 import { Toaster } from "@/components/ui/toaster";
+import { GoogleRating } from "@/components/pebblr/google-rating";
 
 // Build-time env GTM id (kept as a fallback); per-tenant gtmId from
 // dashboard-api StoreSettings takes precedence at runtime (FE-08).
@@ -263,6 +264,11 @@ export default async function RootLayout({
                         phone: "0431 059 554",
                         email: "smile@pebblrbooth.com.au",
                       }}
+                      // V1 puts a Google rating badge in the footer brand
+                      // column, under the logo + blurb row. The footer takes
+                      // it as a generic slot, so the Pebblr-specific markup
+                      // (and the hand-copied rating) stays in the component.
+                      brandSlot={<GoogleRating />}
                     />
                     <Toaster />
                   </CartProvider>

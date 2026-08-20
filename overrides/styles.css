@@ -556,36 +556,90 @@
      `.flex.flex-col.gap-4` alone appears all over the site; the home link is
      the only thing unique to this column, and it is the same anchor V1 uses.
 
-   The V2 mark is a raster `<img>` from Dashboard branding (a square 180x180
-   PNG), not V1's inline SVG, so the size lives on BOTH the wrapper and the
-   image and `object-fit: contain` keeps the aspect ratio — the box is V1's
-   60x66, the square logo lands 60x60 inside it, `left top` keeping its top
-   edge on the description's first line the way V1's does. The `svg` arm covers
-   the platform's fallback mark, which renders in place of the `<img>` whenever
-   Dashboard branding has no icon.
-
-   Known limitation, upstream: the image keeps `sizes="36px"`, which the
-   browser resolves against DPR alone, NOT against this CSS box, so it still
-   picks a ~96w candidate for a 60px slot. It is a flat two-tone monogram so it
-   holds up, but closing this properly needs the platform footer to widen its
-   `sizes` hint.
+   The V2 mark is a raster `<img>` from Dashboard branding, not V1's inline
+   SVG, and it carries a wide white margin — see the block above the
+   `div.h-9 > img` rule below for how the ink is matched to V1's rather than
+   the boxes to each other.
    -------------------------------------------------------------------------- */
 .headkit-footer div.flex-col:has(> a[aria-label="home"]) {
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: flex-start;
+  /* `align-content` only matters once the column wraps, and its initial value
+     is a stretch: this column is a grid cell that the taller menu columns
+     stretch, and that spare height would otherwise be handed to the gap
+     BETWEEN the lockup line and the rating line — measured at 91px instead of
+     16px on the 1440 deployment. Packing the lines to the top keeps the
+     row-gap at V1's `mt-4`. */
+  align-content: flex-start;
   gap: 1rem;
 }
 
-.headkit-footer div.flex-col:has(> a[aria-label="home"]) > a {
+.headkit-footer div.flex-col:has(> a[aria-label="home"]) > a[aria-label="home"] {
   flex-shrink: 0;
 }
 
-.headkit-footer a[aria-label="home"] > div.h-9 {
-  height: 66px;
-  width: 60px;
+/* The description holds line 1 beside the mark. `flex-basis: 0` is what keeps
+   it there: with the column now wrapping (for the rating badge below), an
+   auto-basis item is measured at its max-content width — a whole paragraph —
+   and would break to its own line, undoing the lockup. */
+.headkit-footer div.flex-col:has(> a[aria-label="home"]) > div.min-w-0 {
+  flex: 1 1 0;
 }
 
-.headkit-footer a[aria-label="home"] > div.h-9 > :is(img, svg) {
+/* Anything else in the column — today the Google rating badge — takes a full
+   line under the lockup, which is where V1 puts it (`mt-4`, matching the 1rem
+   row-gap above). */
+.headkit-footer div.flex-col:has(> a[aria-label="home"]) > a:not([aria-label="home"]) {
+  flex-basis: 100%;
+}
+
+/* The LAYOUT box is V1's mark exactly: 56x66 of ink, so the 1rem flex gap and
+   the mobile row both behave as they did before this rule grew. */
+.headkit-footer a[aria-label="home"] > div.h-9 {
+  height: 66px;
+  width: 56px;
+}
+
+/* ...but the V2 mark is a raster PNG with whitespace baked in, so the IMAGE is
+   bigger than the box and bleeds out of it.
+
+   The Dashboard PNG is 180x180 fully-opaque white with the monogram inked from
+   (37,27) to (142,152) — 106x126, centred, i.e. 58.9% of its width and 70% of
+   its height. Sized to the box it would show ~33x46 of ink against V1's 56x66.
+   Matching the INK instead of the box means rendering the PNG at
+   180 x 56/106 = 95px, at which its ink measures 55.9 x 66.5 — V1's mark.
+
+   The 95px square then overhangs the 56x66 box by the PNG's own padding,
+   scaled: 37/180 x 95 = 19.5px each side, 27/180 x 95 = 14.25px top and
+   bottom. Pulling it up and left by exactly that puts the ink's top-left on the
+   box's top-left, which is where V1's tightly-cropped SVG starts — so the ink
+   top sits on the description's first line and the ink's left edge on the
+   column's left edge. `.relative` is already on the box (platform class), so
+   the offsets need no new positioning context. The bleed is invisible: the PNG
+   is opaque WHITE on a white footer, and 19.5px of left bleed still lands
+   inside the footer's own 20px (`px-5`) mobile gutter, so nothing overflows.
+
+   Only the `img` arm is offset. The platform's fallback `svg` (shown when
+   Dashboard branding has no icon) is tightly cropped like V1's, so it just
+   fills the box.
+
+   Known limitation, upstream and now more visible: the platform emits
+   `sizes="36px"`, which the browser resolves against DPR alone rather than
+   against this CSS box, so it picks a small candidate for a 95px slot. The
+   source is only 180x180 in any case, so even a corrected hint could not feed
+   a 2x 95px slot. Both need a platform/asset change, not a local patch. */
+.headkit-footer a[aria-label="home"] > div.h-9 > img {
+  position: absolute;
+  top: -14.25px;
+  left: -19.5px;
+  height: 95px;
+  width: 95px;
+  max-width: none;
+  object-fit: contain;
+}
+
+.headkit-footer a[aria-label="home"] > div.h-9 > svg {
   height: 100%;
   width: 100%;
   object-fit: contain;

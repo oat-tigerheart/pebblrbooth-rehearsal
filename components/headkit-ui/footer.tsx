@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { SVGProps } from "react";
+import { ReactNode, SVGProps } from "react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -115,6 +115,14 @@ interface FooterProps {
    * live in app/layout.tsx and this stays a generic capability.
    */
   contact?: { phone?: string; email?: string };
+  /**
+   * PEBBLR: free content slot in the brand column, rendered under the
+   * description. Same shape as `contact` above — a generic capability that
+   * takes whatever the store needs (Pebblr passes its Google rating badge)
+   * so the store-specific markup lives in app/layout.tsx and this component
+   * carries none of it.
+   */
+  brandSlot?: ReactNode;
   paymentMethods?: PaymentMethod[];
   /** When true, show the mailing-list subscribe box (email marketing connected). */
   showSubscribe?: boolean;
@@ -248,6 +256,7 @@ export function Footer({
   description,
   socialLinks,
   contact,
+  brandSlot,
   paymentMethods = DEFAULT_PAYMENT_METHODS,
   showSubscribe = false,
   hidePaymentIcons = false,
@@ -282,7 +291,7 @@ export function Footer({
             : "md:grid-cols-3 lg:gap-x-24",
         )}
       >
-        {/* Brand: icon above description */}
+        {/* Brand: icon above description, then the brandSlot */}
         <div
           className={cn(
             "flex flex-col gap-4",
@@ -310,6 +319,7 @@ export function Footer({
               {decodeHtmlEntities(description)}
             </div>
           ) : null}
+          {brandSlot}
         </div>
 
         {/* Menu columns — 3 menus → 2+2+2 of 12 on desktop */}
