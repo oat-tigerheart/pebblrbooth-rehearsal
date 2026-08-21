@@ -654,3 +654,50 @@
   object-fit: contain;
   object-position: left top;
 }
+
+/* --------------------------------------------------------------------------
+   WordPress content pages: V1's page layout (issue #3)
+
+   Two rules, both scoped to the WP catch-all's own markup so nothing else on
+   the storefront moves.
+
+   1. THE FEATURE-BANNER TINT. V1 washes the photo in the brand ramp:
+      `bg-gradient-to-bl from-pb-blue/50 to-pb-purple/50`. It lives here, not
+      inline in the component, so it reads the same `--pb-blue`/`--pb-purple`
+      tokens as `--pb-gradient` above and cannot drift from the CTA fill. The
+      class is emitted by `components/pebblr/wp-page-header.tsx`, which this
+      repo owns — a rename there silently turns the tint transparent, so keep
+      the two in step.
+
+   2. THE CONTENT MEASURE. `app/_editorial/wp-block-library.css` gives
+      `.wp-block-content` a blog-column model — `--hk-content-size: 45rem`
+      (720px) centred, `--hk-wide-size: 68rem` for `.alignwide`. That is a
+      sound default for an editorial post, and `/news` keeps it. It is wrong
+      for these pages: V1 runs their copy the full width of the container, so
+      V2 rendered a 720px column centred inside a 1360px wrapper while the
+      page title sat hard against the left edge — the two did not line up, and
+      it read as broken rather than as a measure.
+
+      Releasing the cap (`none`, not a bigger number) lets each block fill the
+      padded container, which IS V1's 1360px at a 1440px viewport and stays
+      correct at any width. Both vars go: leaving `--hk-wide-size` at 68rem
+      would make an author's explicit `.alignwide` NARROWER than an unmarked
+      block. `.alignfull` is untouched — it full-bleeds off `margin-inline`,
+      not off these vars.
+
+      Scoped to `.headkit-cms-page`, the class `CmsPageBody` puts on its own
+      padded sections. News articles render through `PostBody` and keep the
+      45rem reading measure, which is what a long-form article wants.
+   -------------------------------------------------------------------------- */
+.headkit-wp-page-banner__tint {
+  background-image: linear-gradient(
+    to bottom left,
+    color-mix(in srgb, var(--pb-blue) 50%, transparent),
+    color-mix(in srgb, var(--pb-purple) 50%, transparent)
+  );
+}
+
+.headkit-cms-page .wp-block-content {
+  --hk-content-size: none;
+  --hk-wide-size: none;
+}

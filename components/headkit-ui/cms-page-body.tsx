@@ -22,6 +22,20 @@ interface Props {
    * Applied to every form on the page.
    */
   formFallback?: React.ReactNode;
+  /**
+   * Skip the page-title H1 because the ROUTE already rendered it.
+   *
+   * Same intent as the internal `headkit-hero-carousel` check below — "a hero
+   * above me owns the title" — but decided by the caller instead of by the
+   * page's blocks, because a route-level hero is invisible from here. Pebblr's
+   * WP catch-all uses it for the feature-image banner
+   * (`components/pebblr/wp-page-header.tsx`), whose title is overlaid on the
+   * image; without this the page would ship two H1s.
+   *
+   * MISSING PLATFORM HOOK — upstream this to `apps/starter` rather than
+   * carrying the local edit (see AGENTS.md "Missing hook?").
+   */
+  suppressTitle?: boolean;
 }
 
 /** Matches homepage HTML segment padding (`app/page.tsx` HomeContent). */
@@ -74,20 +88,19 @@ export async function CmsPageBody({
   html,
   editorBlocks,
   formFallback,
+  suppressTitle = false,
 }: Props): Promise<React.JSX.Element> {
   const rawBlocks = editorBlocks ?? [];
   const { segments, blocks } = processHomepageContent(html, rawBlocks);
-  const suppressPageTitle = hasEditorSectionClass(
-    blocks,
-    "headkit-hero-carousel",
-  );
+  const suppressPageTitle =
+    suppressTitle || hasEditorSectionClass(blocks, "headkit-hero-carousel");
 
   // No HeadKit section patterns — title + editorial (GF markers in place).
   if (blocks.length === 0) {
     return (
       <div className={CONTENT_PAD}>
-        <h1 className="text-primary">{title}</h1>
-        <div className="mt-5">
+        {suppressPageTitle ? null : <h1 className="text-primary">{title}</h1>}
+        <div className={suppressPageTitle ? undefined : "mt-5"}>
           <EditorialContent html={html} formFallback={formFallback} />
         </div>
       </div>

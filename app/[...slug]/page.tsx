@@ -10,6 +10,8 @@ import { CmsPageBody } from "@/components/headkit-ui/cms-page-body";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CtaBanner } from "@/components/pebblr/cta-banner";
 import { wpPageShowsCtaBanner } from "@/components/pebblr/cta-banner-scope";
+import { WpPageHeader } from "@/components/pebblr/wp-page-header";
+import { wpPageBannerImage } from "@/lib/wp-page-feature-image";
 
 /** Satisfies Cache Components: `generateStaticParams` must not return []. */
 const STATIC_GEN_PLACEHOLDER_SLUG = "__hk_static_placeholder";
@@ -210,6 +212,13 @@ async function CmsRoute({ params }: Props) {
     { name: page.title, href: `/${slug.join("/")}` },
   ];
 
+  // V1's feature-image banner (issue #3). `null` when the page has no image
+  // — 6 of the 14 pages — and then nothing is mounted and CmsPageBody keeps
+  // its ordinary in-flow H1. The image itself comes off the page's SEO data,
+  // NOT `page.featuredImage`, which commerce leaves null for PAGEs; the whole
+  // reasoning (and the drift it can suffer) is in lib/wp-page-feature-image.ts.
+  const bannerImage = wpPageBannerImage(page);
+
   // No outer px/my — CmsPageBody pads HTML/GF segments like the homepage and
   // leaves hero carousels full-bleed (`mx-5` inside MainCarousel). Outer
   // `px-5 md:px-10 my-10` previously double-inset carousels and left a gap
@@ -217,8 +226,12 @@ async function CmsRoute({ params }: Props) {
   return (
     <div className="min-h-[50vh] overflow-hidden">
       <BreadcrumbJsonLD items={breadcrumbItems} />
+      {bannerImage ? (
+        <WpPageHeader title={page.title} image={bannerImage} />
+      ) : null}
       <CmsPageBody
         title={page.title}
+        suppressTitle={Boolean(bannerImage)}
         html={page.content}
         editorBlocks={
           (page.editorBlocks ?? []) as Array<{
