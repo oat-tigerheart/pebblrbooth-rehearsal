@@ -166,6 +166,29 @@ explains why.
 
 This app lives at `apps/starter/` in the HeadKit platform monorepo. Customer repos are typically a flattened copy of this tree (no `apps/starter/` prefix).
 
+## Route scoping: `/book-now` has no route directory
+
+`components/pebblr/cta-banner-scope.ts` is the single named list of routes that
+mount the closing CTA banner, and `cta-banner-scope.test.ts` fails if the list
+and the actual mounts drift apart. Read that file before changing where the
+banner appears; the reasoning is all in its comments.
+
+The trap worth knowing outside that file: **`/book-now` returns 200 but has no
+`app/book-now/` directory** — it is a WordPress page served by the `app/[...slug]`
+catch-all. Any "mount it on the WP catch-all" change silently covers it. Confirm
+the route that actually serves a path (`find app -name page.tsx`, or check the
+live URL) before assuming a directory exists. `/events` is the same shape.
+
+Also non-obvious: `app/shop/[...slug]/page.tsx` delegates its PRODUCT urls to
+`ProductPageContent`, exported from `app/products/[...slug]/page.tsx`, so
+anything added to the flat PDP also appears on the nested `/shop/…` PDP. Its
+CATEGORY urls render `CollectionRoute` instead and are unaffected.
+
+**Do not scope routes with `usePathname` in a root-layout component.** V1 does
+(`projects/pebblr-v1-reference/src/components/cta/cta-section-wrapper.tsx`), but
+this app runs Cache Components, where a dynamic read at root altitude poisons
+static prerendering site-wide. Compose from the route segments instead.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.
