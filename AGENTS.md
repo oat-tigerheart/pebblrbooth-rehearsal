@@ -162,6 +162,39 @@ a thin cached wrapper, because `cacheLife()` throws outside a Next runtime and
 so the wrapper cannot run under Vitest. `lib/stripe-config.ts` does the same and
 explains why.
 
+## WP pages: a PAGE has no `featuredImage`, and the body measure is capped
+
+Both halves of issue #3 were invisible in the code, so they are recorded here.
+
+**`content(type: PAGE)` never returns a featured image.** The SDK query DOES
+select `featuredImage`; commerce only populates it for POSTs ("Featured image;
+null for pages" in its own schema), so a page that WordPress reports a
+`featured_media` for still answers `featuredImage: null`. Fixing that is a
+platform change. The banner therefore reads `seo.opengraphImageUrl` — Yoast
+defaults the OG image to the featured image, and that field IS resolved — via
+`lib/wp-page-feature-image.ts`. Read the comment block there before trusting
+the value: it is a PROXY, and the two ways it can drift are both authored in
+WordPress and invisible from here.
+
+**The 720px column came from `--hk-content-size: 45rem`** in
+`app/_editorial/wp-block-library.css` — WordPress's centred blog-column model,
+right for `/news` and wrong for these pages. `overrides/styles.css` releases it
+(and `--hk-wide-size`) to `none` under `.headkit-cms-page` only. Do not raise
+the cap to a bigger number; `none` is what keeps the copy aligned with the
+title at every width.
+
+Two smaller things worth knowing:
+
+- **6 of the 14 WP pages have no featured image** (`fundraisers`,
+  `brand-activation-2`, `booths`, `packages`, `extra-add-on-services`,
+  `venue-checklist`). They render no banner and keep `CmsPageBody`'s in-flow
+  H1. This is a deliberate divergence from V1, which renders the banner
+  regardless and puts white text on a bare pale gradient.
+- **V1 does not overlay the title on mobile** — image on top, dark title
+  below, overlaying only from `md` up. Check a real 390 viewport
+  (`chrome-devtools-axi emulate --viewport "390x844x3,mobile,touch"`); a window
+  resize clamps at 500px and will mislead you.
+
 ## Monorepo context
 
 This app lives at `apps/starter/` in the HeadKit platform monorepo. Customer repos are typically a flattened copy of this tree (no `apps/starter/` prefix).
