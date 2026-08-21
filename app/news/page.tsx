@@ -10,6 +10,7 @@ import { makeSeoMetadata } from "@/lib/make-metadata";
 import { getBranding } from "@/lib/branding";
 import { TAG } from "@/lib/cache-tags";
 import { getPostsBasePath, postsIndexPath } from "@/lib/posts-base-path";
+import { CtaBanner } from "@/components/pebblr/cta-banner";
 
 const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL ?? "";
 const FALLBACK_TITLE = "News";
@@ -164,6 +165,9 @@ async function NewsRoute({ searchParams }: Props) {
       <Suspense fallback={<EditorialGridSkeleton aspect="video" />}>
         <PostsServer searchParams={searchParams} postsBasePath={postsBase} />
       </Suspense>
+
+      {/* Closing CTA — mounted per route, see components/pebblr/cta-banner-scope.ts */}
+      <CtaBanner />
     </>
   );
 }

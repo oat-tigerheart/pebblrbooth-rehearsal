@@ -8,6 +8,8 @@ import { TAG } from "@/lib/cache-tags";
 import { BreadcrumbJsonLD } from "@/components/seo/breadcrumb-json-ld";
 import { CmsPageBody } from "@/components/headkit-ui/cms-page-body";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CtaBanner } from "@/components/pebblr/cta-banner";
+import { wpPageShowsCtaBanner } from "@/components/pebblr/cta-banner-scope";
 
 /** Satisfies Cache Components: `generateStaticParams` must not return []. */
 const STATIC_GEN_PLACEHOLDER_SLUG = "__hk_static_placeholder";
@@ -187,6 +189,12 @@ async function CmsRoute({ params }: Props) {
           }>
         }
       />
+
+      {/* Closing CTA. WP slugs are open-ended, so this is the one place the
+          scope is a denylist rather than an allowlist — `/book-now` is served
+          by THIS catch-all (200, no route directory) and must not carry a CTA
+          to itself. See components/pebblr/cta-banner-scope.ts. */}
+      {wpPageShowsCtaBanner(slug) && <CtaBanner />}
     </div>
   );
 }

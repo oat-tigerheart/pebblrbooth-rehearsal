@@ -12,6 +12,7 @@ import { ArticleJsonLD } from "@/components/seo/article-json-ld";
 import { BreadcrumbJsonLD } from "@/components/seo/breadcrumb-json-ld";
 import { CarouselPostJsonLD } from "@/components/seo/carousel-post-json-ld";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CtaBanner } from "@/components/pebblr/cta-banner";
 import { makeSeoMetadata, resolveStoreName } from "@/lib/make-metadata";
 import { getBranding, getBrandingAssets } from "@/lib/branding";
 import {
@@ -164,6 +165,9 @@ async function NewsArticleContent({ params }: Props): Promise<ReactNode> {
             </div>
           )}
         </div>
+
+        {/* Closing CTA — mounted per route, see components/pebblr/cta-banner-scope.ts */}
+        <CtaBanner />
       </>
     );
   } catch {

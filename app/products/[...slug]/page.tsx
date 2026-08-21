@@ -21,6 +21,7 @@ import { getStripeConfig } from "@/lib/stripe-config";
 import { isColorAttrSlug } from "@/components/headkit-ui/collection/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductPageShell } from "./product-page-shell";
+import { CtaBanner } from "@/components/pebblr/cta-banner";
 
 const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL ?? "";
 
@@ -365,6 +366,9 @@ export async function ProductPageContent({ params }: Props) {
           </div>
         </section>
       )}
+
+      {/* Closing CTA — mounted per route, see components/pebblr/cta-banner-scope.ts */}
+      <CtaBanner />
     </div>
   );
 }
