@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, unstable_rethrow } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import type { Product, RelatedProduct } from "@headkit/sdk";
 import { headkit as sdk } from "@/lib/sdk";
@@ -118,12 +118,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Instant Navigation (Next.js 16.3) — sync App Shell + Suspense streaming.
- * @see https://nextjs.org/docs/app/guides/instant-navigation
+ * Blocking route so `notFound()` can still set a real 404: under Cache
+ * Components the response commits as 200 the moment a `<Suspense>` fallback
+ * renders, and a `notFound()` raised inside the boundary only earns a
+ * `noindex` meta tag. The existence check therefore runs in the default export,
+ * above the boundary — which needs `params` outside `<Suspense>`, so `instant`
+ * must be `false`. Full reasoning lives once in `app/[...slug]/page.tsx`.
  */
-export const instant = true;
+export const instant = false;
 
-export default function Page(props: Props): ReactNode {
+export default async function Page(props: Props): Promise<ReactNode> {
+  // Pre-commit gate — see the sibling routes.
+  const { slug } = await props.params;
+  const projectSlug = slug[slug.length - 1];
+  if (!projectSlug) notFound();
+  if (!(await getProject(projectSlug))) notFound();
+
   return (
     <Suspense fallback={<ProjectArticleSkeleton />}>
       <ProjectArticleContent {...props} />
@@ -284,7 +294,10 @@ async function ProjectArticleContent({
         </div>
       </>
     );
-  } catch {
+  } catch (err) {
+    // Rethrow Next's control flow (notFound / redirect) before treating this
+    // as a miss — a bare catch swallows the `notFound()` thrown above.
+    unstable_rethrow(err);
     return notFound();
   }
 }

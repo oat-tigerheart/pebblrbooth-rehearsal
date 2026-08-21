@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, unstable_rethrow } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { headkit as sdk } from "@/lib/sdk";
 import { FeaturedImageHeader } from "@/components/headkit-ui/post/featured-image-header";
@@ -84,12 +84,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Instant Navigation (Next.js 16.3) — sync App Shell + Suspense streaming.
- * @see https://nextjs.org/docs/app/guides/instant-navigation
+ * Blocking route so `notFound()` can still set a real 404: under Cache
+ * Components the response commits as 200 the moment a `<Suspense>` fallback
+ * renders, and a `notFound()` raised inside the boundary only earns a
+ * `noindex` meta tag. The existence check therefore runs in the default export,
+ * above the boundary — which needs `params` outside `<Suspense>`, so `instant`
+ * must be `false`. Full reasoning lives once in `app/[...slug]/page.tsx`.
  */
-export const instant = true;
+export const instant = false;
 
-export default function Page(props: Props): ReactNode {
+export default async function Page(props: Props): Promise<ReactNode> {
+  // Pre-commit gate — an unknown post slug must answer 404. The `"use cache"`
+  // post read dedupes with `NewsArticleContent`'s own read below.
+  const { slug } = await props.params;
+  const postSlug = slug[slug.length - 1];
+  if (!postSlug) notFound();
+  if (!(await getPost(postSlug))) notFound();
+
   return (
     <Suspense fallback={<NewsArticleSkeleton />}>
       <NewsArticleContent {...props} />
@@ -170,7 +181,12 @@ async function NewsArticleContent({ params }: Props): Promise<ReactNode> {
         <CtaBanner />
       </>
     );
-  } catch {
+  } catch (err) {
+    // `notFound()` signals by THROWING, so this bare catch used to swallow the
+    // `if (!post)` miss above and only re-derive it by luck. `unstable_rethrow`
+    // re-throws Next's own control-flow signals (notFound / redirect); a genuine
+    // render or transport failure still falls through to the 404 below.
+    unstable_rethrow(err);
     return notFound();
   }
 }

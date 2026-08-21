@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, unstable_rethrow } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { headkit as sdk } from "@/lib/sdk";
 import { ProjectGrid } from "@/components/headkit-ui/project/project-grid";
@@ -77,9 +77,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export const instant = true;
+/**
+ * Blocking route so `notFound()` can still set a real 404: under Cache
+ * Components the response commits as 200 the moment a `<Suspense>` fallback
+ * renders, and a `notFound()` raised inside the boundary only earns a
+ * `noindex` meta tag. The existence check therefore runs in the default export,
+ * above the boundary — which needs `params` outside `<Suspense>`, so `instant`
+ * must be `false`. Full reasoning lives once in `app/[...slug]/page.tsx`.
+ */
+export const instant = false;
 
-export default function Page(props: Props): ReactNode {
+export default async function Page(props: Props): Promise<ReactNode> {
+  // Pre-commit gate — see the sibling routes.
+  const { slug } = await props.params;
+  const clientSlug = slug[slug.length - 1];
+  if (!clientSlug || clientSlug === STATIC_GEN_PLACEHOLDER_SLUG) notFound();
+  if (!(await getClient(clientSlug))) notFound();
+
   return (
     <Suspense fallback={<ClientPageSkeleton />}>
       <ClientPageContent {...props} />
@@ -99,7 +113,10 @@ async function ClientPageContent({
   let client;
   try {
     client = await getClient(clientSlug);
-  } catch {
+  } catch (err) {
+    // Rethrow Next's control flow (notFound / redirect) before treating a
+    // thrown error as a miss.
+    unstable_rethrow(err);
     return notFound();
   }
   if (!client) return notFound();

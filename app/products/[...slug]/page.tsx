@@ -221,17 +221,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Instant Navigation (Next.js 16.3): keep the route segment sync so Partial
- * Prefetching can ship an App Shell immediately. Awaiting `params` / product
- * data in the default export blocks the shell (and is a known Partial
- * Prefetching footgun). Stream via Suspense; `'use cache'` product reads can
- * still pop in early when links use `prefetch={true}`.
- *
- * @see https://nextjs.org/docs/app/guides/instant-navigation
+ * Blocking route so `notFound()` can still set a real 404: under Cache
+ * Components the response commits as 200 the moment a `<Suspense>` fallback
+ * renders, and a `notFound()` raised inside the boundary only earns a
+ * `noindex` meta tag. The existence check therefore runs in the default export,
+ * above the boundary — which needs `params` outside `<Suspense>`, so `instant`
+ * must be `false`. Full reasoning lives once in `app/[...slug]/page.tsx`.
  */
-export const instant = true;
+export const instant = false;
 
-export default function ProductPage({ params }: Props) {
+export default async function ProductPage({ params }: Props) {
+  // Pre-commit gate — an unknown product slug must answer 404, not a 200 shell
+  // that streams the not-found UI. `ProductPageContent` repeats both checks: it
+  // is also entered from `/shop/[...slug]`, and the `"use cache"` product read
+  // dedupes, so the repeat is free.
+  const { slug } = await params;
+  const productSlug = slug[0]!;
+  if (productSlug === STATIC_GEN_PLACEHOLDER_SLUG) notFound();
+  if (!(await getCachedProduct(productSlug))) notFound();
+
   return (
     <Suspense fallback={<ProductPageShell />}>
       <ProductPageContent params={params} />

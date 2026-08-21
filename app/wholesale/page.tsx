@@ -23,6 +23,16 @@ import { getPageData } from "@/app/[...slug]/page";
  */
 const WHOLESALE_SLUG = "wholesale";
 
+/**
+ * Blocking route so the `notFound()` below sets a real 404 rather than a 200
+ * that streams the not-found UI. This route awaits its page read before
+ * returning any markup, but under Cache Components an instant route may still
+ * commit a shell first. `/wholesale` is the case issue #2 was filed on: it
+ * answered 200 under the slug-derived title `Wholesale | …`, so a missing page
+ * read as a real one in crawl reports. Reasoning in `app/[...slug]/page.tsx`.
+ */
+export const instant = false;
+
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageData(WHOLESALE_SLUG);
   if (!page) {

@@ -121,7 +121,52 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default function Page({ params }: Props) {
+/**
+ * Blocking route (Next.js 16.3) — a missing page must answer a real 404.
+ *
+ * CANONICAL EXPLANATION for every dynamic segment in this app; the sibling
+ * routes point back here rather than restating it.
+ *
+ * `notFound()` works by throwing, and a throw can only set the status while the
+ * status line is still unsent. Under Cache Components the response COMMITS as
+ * 200 the moment a `<Suspense>` fallback renders, so a `notFound()` raised
+ * inside the boundary arrives too late: Next injects
+ * `<meta name="robots" content="noindex">` into the already-streaming body
+ * instead of sending a 404 header. `redirect()` degrades the same way — see the
+ * `/posts` note in next.config.ts, which is this exact bug in its redirect
+ * shape, found and fixed a release earlier without anyone noticing that
+ * `notFound()` shared the mechanism.
+ *
+ * The documented fix is to decide before anything can suspend: await the
+ * existence check in the route's own default export, ABOVE the boundary. That
+ * needs `params` outside `<Suspense>`, which `export const instant = true`
+ * forbids — hence `false`. The cost is this route's App Shell skeleton: TTFB
+ * now waits on one `"use cache"` read (warm: memory) rather than painting a
+ * skeleton first. Everything expensive still streams behind the boundary below,
+ * so time-to-content is broadly unchanged — only the skeleton frame is lost.
+ *
+ * @see https://nextjs.org/docs/app/guides/streaming (The HTTP contract)
+ */
+export const instant = false;
+
+export default async function Page({ params }: Props) {
+  // Pre-commit gate: every branch that can 404 or redirect must resolve HERE,
+  // while the status line is still ours to set. `CmsRoute` repeats these checks
+  // because it must stay correct on its own terms (it also narrows `page` for
+  // TypeScript); the `"use cache"` reads dedupe, so the repeat costs nothing.
+  const { slug } = await params;
+  if (slug[0] === STATIC_GEN_PLACEHOLDER_SLUG) notFound();
+  const contentSlug = slug.join("/");
+  const postsLandingSlug = await getPostsLandingSlug();
+  if (
+    postsLandingSlug &&
+    contentSlug === postsLandingSlug &&
+    postsLandingSlug !== "news"
+  ) {
+    permanentRedirect("/news");
+  }
+  if (!(await getPageData(contentSlug))) notFound();
+
   return (
     <Suspense
       fallback={
@@ -137,12 +182,6 @@ export default function Page({ params }: Props) {
     </Suspense>
   );
 }
-
-/**
- * Instant Navigation (Next.js 16.3) — sync App Shell + Suspense streaming.
- * @see https://nextjs.org/docs/app/guides/instant-navigation
- */
-export const instant = true;
 
 async function CmsRoute({ params }: Props) {
   const { slug } = await params;

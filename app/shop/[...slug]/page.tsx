@@ -185,14 +185,35 @@ export async function generateMetadata({
 }
 
 /**
- * Instant Navigation (Next.js 16.3): keep the route segment sync so Partial
- * Prefetching can ship an App Shell immediately. Awaiting `params` in the
- * default export blocks the shell. Stream via Suspense.
- * @see https://nextjs.org/docs/app/guides/instant-navigation
+ * Blocking route so `notFound()` can still set a real 404: under Cache
+ * Components the response commits as 200 the moment a `<Suspense>` fallback
+ * renders, and a `notFound()` raised inside the boundary only earns a
+ * `noindex` meta tag. The existence check therefore runs in the default export,
+ * above the boundary — which needs `params` outside `<Suspense>`, so `instant`
+ * must be `false`. Full reasoning lives once in `app/[...slug]/page.tsx`.
  */
-export const instant = true;
+export const instant = false;
 
-export default function Page(props: Props): ReactNode {
+export default async function Page(props: Props): Promise<ReactNode> {
+  // Pre-commit gate. This route DELEGATES to the PDP and collection views, so
+  // it must reproduce their existence decision here rather than let them 404
+  // mid-stream: `resolveShopPath` classifies a bare `/shop/{slug}` as a PRODUCT
+  // (see shop-slug.test.ts), which means an unknown one-segment path only fails
+  // once the product read comes back null.
+  //
+  // The `category` branch needs no lookup — a category only classifies as one
+  // by already being present in the tree that was just read.
+  const { slug } = await props.params;
+  if (slug[0] === STATIC_GEN_PLACEHOLDER_SLUG) notFound();
+  const resolved = resolveShopPath(slug, await getShopCategoryTree());
+  if (resolved.kind === "unknown" || resolved.kind === "index") notFound();
+  if (
+    resolved.kind === "product" &&
+    !(await getCachedProduct(resolved.productSlug))
+  ) {
+    notFound();
+  }
+
   return (
     <Suspense fallback={<ProductPageShell />}>
       <ShopRouteContent {...props} />
