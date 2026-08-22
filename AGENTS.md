@@ -195,6 +195,46 @@ Two smaller things worth knowing:
   (`chrome-devtools-axi emulate --viewport "390x844x3,mobile,touch"`); a window
   resize clamps at 500px and will mislead you.
 
+## SEO metadata: canonicals are host-aware, and an omitted `allowIndexing` inherits
+
+Ported from monorepo `e88c27c1` (PR #308). Three things here are invisible in the code.
+
+**A CMS canonical is judged by HOST, not accepted verbatim.** Yoast in a headless
+store emits the WordPress *backend* permalink, and its path need not match a
+storefront route — WordPress serves a post at `/what-is-a-photobooth/` where this
+app serves it at `/news/what-is-a-photobooth`. So re-rooting the foreign path is
+NOT a fix; it canonicalised all ten articles to the not-found page. Use
+`resolveCanonical()` in `lib/make-metadata.ts`, which keeps a relative or
+same-host CMS value (a same-host one is a deliberate editorial canonicalisation)
+and otherwise lets the route's own self-referential canonical win. Read the
+comment block on that function before changing the precedence.
+
+**Pass `siteUrl: storeSettings.domain` at every `makeSeoMetadata` /
+`makeRootMetadata` call site.** The origin must resolve at RUNTIME via
+`resolveSiteUrl`, because `NEXT_PUBLIC_FRONTEND_URL` is optional and inlined at
+build time. Unset, the old code had no host to compare against and fell straight
+through to the foreign canonical — the bug itself. `storefrontUrl(path, domain)`
+is the helper for self-canonicals; it can never return a foreign origin.
+
+**Omitting `allowIndexing` no longer means "index".** The `robots` KEY is now left
+off the returned object entirely so Next inherits the root layout's store-driven
+value. It must be ABSENT, not `undefined` — Next's metadata merge walks only keys
+present on the object, so `robots: undefined` resolves to null and clobbers the
+parent. Prefer passing the flag explicitly; the inherit path exists so a route's
+`catch` branch cannot publish a page the store has switched off.
+
+Two consequences worth knowing:
+
+- **The collection canonical is derived from the CATEGORY, not the requested
+  path** (`collectionPathFromCategory`), so `/collections/child` and
+  `/collections/parent/child` agree. It can legitimately disagree with the
+  sitemap's path on a >100-category store; the long comment at the canonical site
+  in `app/collections/[...slug]/page.tsx` says why, and why not to "fix" it here.
+- **The sitemap discovers WordPress pages through the navigation menus**, because
+  the schema has no pages-list query, then confirms each with `content(type:
+  PAGE)` before emitting it. A published page linked from no menu is not
+  discovered — that gap needs a commerce change, not a local patch.
+
 ## Monorepo context
 
 This app lives at `apps/starter/` in the HeadKit platform monorepo. Customer repos are typically a flattened copy of this tree (no `apps/starter/` prefix).

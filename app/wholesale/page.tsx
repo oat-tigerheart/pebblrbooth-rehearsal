@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { GravityForm } from "@/components/gravity-form";
-import { makeSeoMetadata, seoFallbackDescription } from "@/lib/make-metadata";
+import {
+  makeSeoMetadata,
+  seoFallbackDescription,
+  storefrontUrl,
+} from "@/lib/make-metadata";
+import { getBranding } from "@/lib/branding";
 import { EditorialContent } from "@/components/headkit-ui/editorial-content";
 import { env } from "@/lib/env";
 import { getPageData } from "@/app/[...slug]/page";
@@ -34,7 +39,10 @@ const WHOLESALE_SLUG = "wholesale";
 export const instant = false;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = await getPageData(WHOLESALE_SLUG);
+  const [page, { seoSettings, storeSettings }] = await Promise.all([
+    getPageData(WHOLESALE_SLUG),
+    getBranding(),
+  ]);
   if (!page) {
     return {
       title: "Wholesale",
@@ -44,6 +52,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return makeSeoMetadata(page.seo ?? null, {
     title: page.title,
     description: seoFallbackDescription("page", page.title),
+    canonical: storefrontUrl(`/${WHOLESALE_SLUG}`, storeSettings.domain),
+    siteUrl: storeSettings.domain,
+    allowIndexing: seoSettings.allowIndexing,
   });
 }
 

@@ -13,7 +13,11 @@ import { BreadcrumbJsonLD } from "@/components/seo/breadcrumb-json-ld";
 import { CarouselPostJsonLD } from "@/components/seo/carousel-post-json-ld";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CtaBanner } from "@/components/pebblr/cta-banner";
-import { makeSeoMetadata, resolveStoreName } from "@/lib/make-metadata";
+import {
+  makeSeoMetadata,
+  resolveStoreName,
+  storefrontUrl,
+} from "@/lib/make-metadata";
 import { getBranding, getBrandingAssets } from "@/lib/branding";
 import {
   getPostsBasePath,
@@ -64,10 +68,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         getPostsBasePath(),
       ]);
     if (!post) return {};
-    const siteUrl = (process.env.NEXT_PUBLIC_FRONTEND_URL ?? "").replace(
-      /\/$/,
-      "",
-    );
     const path = postsArticlePath(postsBase, postSlug);
     return makeSeoMetadata(post.seo, {
       title: post.title,
@@ -76,7 +76,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       dashboardOgImageUrl: seoSettings.ogImageUrl ?? undefined,
       brandingIconUrl: iconUrl ?? undefined,
       allowIndexing: seoSettings.allowIndexing,
-      ...(siteUrl ? { canonical: `${siteUrl}${path}` } : {}),
+      canonical: storefrontUrl(path, storeSettings.domain),
+      siteUrl: storeSettings.domain,
     });
   } catch {
     return {};
@@ -127,10 +128,6 @@ async function NewsArticleContent({ params }: Props): Promise<ReactNode> {
     const indexPath = postsIndexPath(postsBase);
     const articlePath = postsArticlePath(postsBase, postSlug);
     const postsLabel = landing?.title?.trim() || "News";
-    const siteUrl = (process.env.NEXT_PUBLIC_FRONTEND_URL ?? "").replace(
-      /\/$/,
-      "",
-    );
 
     const breadcrumbs = [
       { name: "Home", href: "/" },
@@ -146,7 +143,7 @@ async function NewsArticleContent({ params }: Props): Promise<ReactNode> {
           datePublished={post.date ?? undefined}
           dateModified={post.modified ?? undefined}
           image={post.featuredImage?.src}
-          url={`${siteUrl}${articlePath}`}
+          url={storefrontUrl(articlePath, storeSettings.domain)}
         />
         <BreadcrumbJsonLD items={breadcrumbs} />
         {related.length > 0 && <CarouselPostJsonLD posts={related} />}
